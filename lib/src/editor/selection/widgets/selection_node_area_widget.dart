@@ -25,10 +25,12 @@ class SelectionAreaForNodeWidget extends StatefulWidget {
   final CursorCont cursorCont;
 
   @override
-  State<SelectionAreaForNodeWidget> createState() => _SelectionAreaForNodeWidgetState();
+  State<SelectionAreaForNodeWidget> createState() =>
+      _SelectionAreaForNodeWidgetState();
 }
 
-class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget> {
+class _SelectionAreaForNodeWidgetState
+    extends State<SelectionAreaForNodeWidget> {
   // keep the previous cursor rect to avoid unnecessary rebuild
   Rect? prevCursorRect;
   // keep the previous selection rects to avoid unnecessary rebuild
@@ -74,8 +76,10 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
   TextPosition _getPosition(TextSelection selection) {
     return widget.cursorCont.isFloatingCursorActive
         ? TextPosition(
-            offset: widget.cursorCont.floatingCursorTextPosition.value!.offset - widget.container.documentOffset,
-            affinity: widget.cursorCont.floatingCursorTextPosition.value!.affinity,
+            offset: widget.cursorCont.floatingCursorTextPosition.value!.offset -
+                widget.container.documentOffset,
+            affinity:
+                widget.cursorCont.floatingCursorTextPosition.value!.affinity,
           )
         : TextPosition(
             offset: selection.extentOffset - widget.container.documentOffset,
@@ -94,7 +98,8 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
   Offset? _cachedOffset;
 
   Offset getEffectiveOffset() {
-    _cachedOffset = localToGlobalOffset() + (widget.delegate.renderBox!.parentData as BoxParentData).offset;
+    _cachedOffset = localToGlobalOffset() +
+        (widget.delegate.renderBox!.parentData as BoxParentData).offset;
     return _cachedOffset!;
   }
 
@@ -108,7 +113,8 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
       }
       if (isEmbed) {
         // set to nullable all values to avoid any unexpected rect
-        if (!widget.container.containsOffset((current ?? widget.selection.value).baseOffset)) {
+        if (!widget.container
+            .containsOffset((current ?? widget.selection.value).baseOffset)) {
           if (prevBlockRect != null) {
             setState(() {
               prevBlockRect = null;
@@ -130,7 +136,8 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
         prevSelectionRects = null;
         prevBlockRect = null;
         final box = widget.delegate.getLocalRectForCaret(TextPosition(
-            offset: (current ?? widget.selection.value).baseOffset + widget.container.documentOffset));
+            offset: (current ?? widget.selection.value).baseOffset +
+                widget.container.documentOffset));
         final rect = Rect.fromLTRB(
           box.left,
           box.top,
@@ -159,7 +166,8 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
   bool get isEmbed =>
       widget.delegate.container is Embed ||
       widget.delegate.container.children.length == 1 &&
-          ((widget.delegate.container.first as QuillText?)?.parent?.hasEmbed ?? false);
+          ((widget.delegate.container.first as QuillText?)?.parent?.hasEmbed ??
+              false);
 
   @override
   Widget build(BuildContext context) {
@@ -172,7 +180,8 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
             updateSelectionRectsIfNeeded();
           });
           if (isEmbed) {
-            if (!widget.hasFocus && !widget.cursorCont.show.value || !containsCursor(value)) {
+            if (!widget.hasFocus && !widget.cursorCont.show.value ||
+                !containsCursor(value)) {
               return sizedBox;
             }
             final isIntoRangeOfNode = widget.container.containsOffset(
@@ -203,7 +212,9 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
                       delegate: widget.delegate,
                       offset: _cachedOffset ?? getEffectiveOffset(),
                       // embeds or blocks cannot have embeds
-                      lineHasEmbed: widget.container is Line ? (widget.container as Line).hasEmbed : false,
+                      lineHasEmbed: widget.container is Line
+                          ? (widget.container as Line).hasEmbed
+                          : false,
                       position: _getPosition(value),
                       style: widget.cursorCont.style,
                       color: widget.cursorCont.color.value,
@@ -216,7 +227,8 @@ class _SelectionAreaForNodeWidgetState extends State<SelectionAreaForNodeWidget>
               child: sizedBox,
             );
           }
-          if (prevSelectionRects == null || (prevSelectionRects?.isEmpty ?? false)) {
+          if (prevSelectionRects == null ||
+              (prevSelectionRects?.isEmpty ?? false)) {
             return sizedBox;
           }
           return SelectionAreaPaint(

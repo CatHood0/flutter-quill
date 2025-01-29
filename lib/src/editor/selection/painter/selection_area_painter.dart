@@ -40,7 +40,7 @@ class SelectionAreaPainter extends CustomPainter {
     for (var rect in rects) {
       // if rect.width is 0, we draw a small rect to indicate the selection area
       if (rect.width <= 0) {
-        rect = Rect.fromLTWH(rect.left, rect.top, 8.0, rect.height);
+        rect = Rect.fromLTWH(rect.left, rect.top, 8, rect.height);
       }
       canvas.drawRect(
         rect,

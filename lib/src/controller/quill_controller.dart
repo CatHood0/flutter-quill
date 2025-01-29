@@ -94,6 +94,7 @@ class QuillController extends ChangeNotifier {
 
   /// Currently selected text within the [document].
   TextSelection get selection => _selection.value;
+
   /// A listenable for notice directly of changes whitin selection
   @experimental
   ValueNotifier<TextSelection> get listenableSelection => _selection;

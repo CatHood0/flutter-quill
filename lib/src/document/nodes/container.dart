@@ -125,7 +125,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
   int get length {
     final shouldNotify = _length == null;
     _length ??= _children.fold(0, (cur, node) => (cur ?? 0) + node.length);
-    if(shouldNotify) {
+    if (shouldNotify) {
       parent?.notify();
       notify();
     }

@@ -10,7 +10,8 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
   GlobalKey get forwardKey;
   GlobalKey get containerKey;
 
-  SelectableMixin<StatefulWidget> get forward => forwardKey.currentState as SelectableMixin;
+  SelectableMixin<StatefulWidget> get forward =>
+      forwardKey.currentState as SelectableMixin;
 
   CursorCont get cursorCont;
 

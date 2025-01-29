@@ -46,6 +46,7 @@ class Document {
 
   /// register a litener for the changes in [Root] node
   void addListener(VoidCallback listener) => _root.addListener(listener);
+
   /// Removes the registered litener for the changes in [Root] node
   void removeListener(VoidCallback listener) => _root.removeListener(listener);
 
@@ -63,7 +64,8 @@ class Document {
     _rules.setCustomRules(customRules);
   }
 
-  final StreamController<DocChange> documentChangeObserver = StreamController.broadcast();
+  final StreamController<DocChange> documentChangeObserver =
+      StreamController.broadcast();
 
   final History history = History();
 
@@ -88,7 +90,8 @@ class Document {
       return Delta();
     }
 
-    final delta = _rules.apply(RuleType.insert, this, index, data: data, len: replaceLength);
+    final delta = _rules.apply(RuleType.insert, this, index,
+        data: data, len: replaceLength);
     compose(delta, ChangeSource.local);
     return delta;
   }
@@ -170,7 +173,8 @@ class Document {
 
     var delta = Delta();
 
-    final formatDelta = _rules.apply(RuleType.format, this, index, len: len, attribute: attribute);
+    final formatDelta = _rules.apply(RuleType.format, this, index,
+        len: len, attribute: attribute);
     if (formatDelta.isNotEmpty) {
       compose(formatDelta, ChangeSource.local);
       delta = delta.compose(formatDelta);
@@ -201,13 +205,15 @@ class Document {
       final prev = (res.node as Line).collectStyle(res.offset, 0);
       final attributes = <String, Attribute>{};
       for (final attr in prev.attributes.values) {
-        if (attr.scope == AttributeScope.inline && attr.key != Attribute.link.key) {
+        if (attr.scope == AttributeScope.inline &&
+            attr.key != Attribute.link.key) {
           attributes[attr.key] = attr;
         }
       }
       // Combine with block attributes from current line (exclude headers which apply only to the active line)
       for (final attr in current.attributes.values) {
-        if (attr.scope == AttributeScope.block && attr.key != Attribute.header.key) {
+        if (attr.scope == AttributeScope.block &&
+            attr.key != Attribute.header.key) {
           attributes[attr.key] = attr;
         }
       }
@@ -219,7 +225,10 @@ class Document {
     if (linkAttribute != null) {
       if ((res.node!.length - 1 == res.offset) ||
           (linkAttribute.value !=
-              (res.node as Line).collectStyle(res.offset, len).attributes[Attribute.link.key]?.value)) {
+              (res.node as Line)
+                  .collectStyle(res.offset, len)
+                  .attributes[Attribute.link.key]
+                  ?.value)) {
         return style.removeAll({linkAttribute});
       }
     }
@@ -229,7 +238,8 @@ class Document {
   /// Returns all styles and Embed for each node within selection
   List<OffsetValue> collectAllIndividualStyleAndEmbed(int index, int len) {
     final res = queryChild(index);
-    return (res.node as Line).collectAllIndividualStylesAndEmbed(res.offset, len);
+    return (res.node as Line)
+        .collectAllIndividualStylesAndEmbed(res.offset, len);
   }
 
   /// Returns all styles for any character within the specified text range.
@@ -264,13 +274,16 @@ class Document {
   QuillSearchConfig? get searchConfig => _searchConfig;
 
   @internal
-  set searchConfig(QuillSearchConfig? searchConfig) => _searchConfig = searchConfig;
+  set searchConfig(QuillSearchConfig? searchConfig) =>
+      _searchConfig = searchConfig;
 
   @internal
-  set embedBuilders(Iterable<EmbedBuilder>? embedBuilders) => _embedBuilders = embedBuilders;
+  set embedBuilders(Iterable<EmbedBuilder>? embedBuilders) =>
+      _embedBuilders = embedBuilders;
 
   @internal
-  set unknownEmbedBuilder(EmbedBuilder? unknownEmbedBuilder) => _unknownEmbedBuilder = unknownEmbedBuilder;
+  set unknownEmbedBuilder(EmbedBuilder? unknownEmbedBuilder) =>
+      _unknownEmbedBuilder = unknownEmbedBuilder;
 
   /// Returns plain text within the specified text range.
   String getPlainText(
@@ -436,7 +449,8 @@ class Document {
     delta = _transform(delta);
     final originalDelta = toDelta();
     for (final op in delta.toList()) {
-      final style = op.attributes != null ? Style.fromJson(op.attributes) : null;
+      final style =
+          op.attributes != null ? Style.fromJson(op.attributes) : null;
 
       if (op.isInsert) {
         // Must normalize data before inserting into the document, makes sure
@@ -486,7 +500,8 @@ class Document {
     return res;
   }
 
-  static void _autoAppendNewlineAfterEmbeddable(int i, List<Operation> ops, Operation op, Delta res, String type) {
+  static void _autoAppendNewlineAfterEmbeddable(
+      int i, List<Operation> ops, Operation op, Delta res, String type) {
     final nextOpIsEmbed = i + 1 < ops.length &&
         ops[i + 1].isInsert &&
         ops[i + 1].data is Map &&
@@ -498,7 +513,8 @@ class Document {
       res.push(Operation.insert('\n'));
     }
     // embed could be image or video
-    final opInsertEmbed = op.isInsert && op.data is Map && (op.data as Map).containsKey(type);
+    final opInsertEmbed =
+        op.isInsert && op.data is Map && (op.data as Map).containsKey(type);
     final nextOpIsLineBreak = i + 1 < ops.length &&
         ops[i + 1].isInsert &&
         ops[i + 1].data is String &&
@@ -530,11 +546,14 @@ class Document {
     Iterable<EmbedBuilder>? embedBuilders,
     EmbedBuilder? unknownEmbedBuilder,
   ]) =>
-      _root.children.map((e) => e.toPlainText(embedBuilders, unknownEmbedBuilder)).join();
+      _root.children
+          .map((e) => e.toPlainText(embedBuilders, unknownEmbedBuilder))
+          .join();
 
   void _loadDocument(Delta doc) {
     if (doc.isEmpty) {
-      throw ArgumentError.value(doc.toString(), 'Document Delta cannot be empty.');
+      throw ArgumentError.value(
+          doc.toString(), 'Document Delta cannot be empty.');
     }
 
     assert((doc.last.data as String).endsWith('\n'));
@@ -542,15 +561,20 @@ class Document {
     var offset = 0;
     for (final op in doc.toList()) {
       if (!op.isInsert) {
-        throw ArgumentError.value(doc, 'Document can only contain insert operations but ${op.key} found.');
+        throw ArgumentError.value(doc,
+            'Document can only contain insert operations but ${op.key} found.');
       }
-      final style = op.attributes != null ? Style.fromJson(op.attributes) : null;
+      final style =
+          op.attributes != null ? Style.fromJson(op.attributes) : null;
       final data = _normalize(op.data);
       _root.insert(offset, data, style);
       offset += op.length!;
     }
     final node = _root.last;
-    if (node is Line && node.parent is! Block && node.style.isEmpty && _root.childCount > 1) {
+    if (node is Line &&
+        node.parent is! Block &&
+        node.style.isEmpty &&
+        _root.childCount > 1) {
       _root.remove(node);
     }
   }
@@ -566,7 +590,9 @@ class Document {
     }
 
     final delta = node.toDelta();
-    return delta.length == 1 && delta.first.data == '\n' && delta.first.key == 'insert';
+    return delta.length == 1 &&
+        delta.first.data == '\n' &&
+        delta.first.key == 'insert';
   }
 }
 

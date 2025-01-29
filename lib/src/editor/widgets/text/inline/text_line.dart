@@ -64,10 +64,13 @@ class TextLine extends StatefulWidget {
 }
 
 class _TextLineState extends State<TextLine>
-    with SelectableMixin<TextLine>, DefaultTextSelectionMixinImplementation<TextLine> {
+    with
+        SelectableMixin<TextLine>,
+        DefaultTextSelectionMixinImplementation<TextLine> {
   bool _metaOrControlPressed = false;
 
-  late final GlobalKey _richTextKey = GlobalKey(debugLabel: 'text_line_key_${container.hashCode}');
+  late final GlobalKey _richTextKey =
+      GlobalKey(debugLabel: 'text_line_key_${container.hashCode}');
 
   final _linkRecognizers = <Node, GestureRecognizer>{};
   @override
@@ -145,7 +148,9 @@ class _TextLineState extends State<TextLine>
   }
 
   /// Check if this line contains the placeholder attribute
-  bool get isPlaceholderLine => widget.line.toDelta().first.attributes?.containsKey('placeholder') ?? false;
+  bool get isPlaceholderLine =>
+      widget.line.toDelta().first.attributes?.containsKey('placeholder') ??
+      false;
 
   @override
   Widget build(BuildContext context) {
@@ -179,7 +184,8 @@ class _TextLineState extends State<TextLine>
       }
     }
     final textSpan = _getTextSpanForWholeLine();
-    final strutStyle = StrutStyle.fromTextStyle(textSpan.style ?? const TextStyle());
+    final strutStyle =
+        StrutStyle.fromTextStyle(textSpan.style ?? const TextStyle());
     final textAlign = _getTextAlign();
     // selectable node is encharged of the manage selection changes
     final child = SelectableNodeWidget(
@@ -232,12 +238,14 @@ class _TextLineState extends State<TextLine>
     for (var child in widget.line.children) {
       if (child is Embed) {
         if (textNodes.isNotEmpty) {
-          textSpanChildren.add(_buildTextSpan(widget.styles, textNodes, lineStyle));
+          textSpanChildren
+              .add(_buildTextSpan(widget.styles, textNodes, lineStyle));
           textNodes = LinkedList<Node>();
         }
         // Creates correct node for custom embed
         if (child.value.type == BlockEmbed.customType) {
-          child = Embed(CustomBlockEmbed.fromJsonString(child.value.data))..applyStyle(child.style);
+          child = Embed(CustomBlockEmbed.fromJsonString(child.value.data))
+            ..applyStyle(child.style);
         }
 
         if (child.value.type == BlockEmbed.formulaType) {
@@ -304,19 +312,23 @@ class _TextLineState extends State<TextLine>
     final isComposingRangeOutOfLine = !widget.composingRange.isValid ||
         widget.composingRange.isCollapsed ||
         (widget.composingRange.start < widget.line.documentOffset ||
-            widget.composingRange.end > widget.line.documentOffset + widget.line.length);
+            widget.composingRange.end >
+                widget.line.documentOffset + widget.line.length);
 
     if (isComposingRangeOutOfLine) {
       final children = nodes
-          .map((node) => _getTextSpanFromNode(defaultStyles, node, widget.line.style))
+          .map((node) =>
+              _getTextSpanFromNode(defaultStyles, node, widget.line.style))
           .toList(growable: false);
       return TextSpan(children: children, style: lineStyle);
     }
 
     final children = nodes.expand((node) {
-      final child = _getTextSpanFromNode(defaultStyles, node, widget.line.style);
-      final isNodeInComposingRange = node.documentOffset <= widget.composingRange.start &&
-          widget.composingRange.end <= node.documentOffset + node.length;
+      final child =
+          _getTextSpanFromNode(defaultStyles, node, widget.line.style);
+      final isNodeInComposingRange =
+          node.documentOffset <= widget.composingRange.start &&
+              widget.composingRange.end <= node.documentOffset + node.length;
       if (isNodeInComposingRange) {
         return _splitAndApplyComposingStyle(node, child);
       } else {
@@ -340,7 +352,8 @@ class _TextLineState extends State<TextLine>
     final textComposing = text.substring(composingStart, composingEnd);
     final textAfter = text.substring(composingEnd);
 
-    final composingStyle = child.style?.merge(const TextStyle(decoration: TextDecoration.underline)) ??
+    final composingStyle = child.style
+            ?.merge(const TextStyle(decoration: TextDecoration.underline)) ??
         const TextStyle(decoration: TextDecoration.underline);
 
     return [
@@ -399,15 +412,19 @@ class _TextLineState extends State<TextLine>
 
     final lineHeight = widget.line.style.attributes[Attribute.lineHeight.key];
     final x = <Attribute, TextStyle>{
-      LineHeightAttribute.lineHeightNormal: defaultStyles.lineHeightNormal!.style,
+      LineHeightAttribute.lineHeightNormal:
+          defaultStyles.lineHeightNormal!.style,
       LineHeightAttribute.lineHeightTight: defaultStyles.lineHeightTight!.style,
-      LineHeightAttribute.lineHeightOneAndHalf: defaultStyles.lineHeightOneAndHalf!.style,
-      LineHeightAttribute.lineHeightDouble: defaultStyles.lineHeightDouble!.style,
+      LineHeightAttribute.lineHeightOneAndHalf:
+          defaultStyles.lineHeightOneAndHalf!.style,
+      LineHeightAttribute.lineHeightDouble:
+          defaultStyles.lineHeightDouble!.style,
     };
 
     // If the lineHeight attribute isn't null, then get just the height param instead whole TextStyle
     // to avoid modify the current style of the text line
-    textStyle = textStyle.merge(textStyle.copyWith(height: x[lineHeight]?.height));
+    textStyle =
+        textStyle.merge(textStyle.copyWith(height: x[lineHeight]?.height));
 
     textStyle = _applyCustomAttributes(textStyle, widget.line.style.attributes);
 
@@ -424,7 +441,8 @@ class _TextLineState extends State<TextLine>
     return textStyle;
   }
 
-  TextStyle _applyCustomAttributes(TextStyle textStyle, Map<String, Attribute> attributes) {
+  TextStyle _applyCustomAttributes(
+      TextStyle textStyle, Map<String, Attribute> attributes) {
     if (widget.customStyleBuilder == null) {
       return textStyle;
     }
@@ -443,16 +461,23 @@ class _TextLineState extends State<TextLine>
   ///
   /// Reduces text fontSize and shifts down or up. Increases fontWeight to maintain balance with normal text.
   /// Outputs characters individually to allow correct caret positioning and text selection.
-  InlineSpan _scriptSpan(String text, bool superScript, TextStyle style, DefaultStyles defaultStyles) {
+  InlineSpan _scriptSpan(String text, bool superScript, TextStyle style,
+      DefaultStyles defaultStyles) {
     assert(text.isNotEmpty);
     //
-    final lineStyle = style.fontSize == null || style.fontWeight == null ? _getLineStyle(defaultStyles) : null;
-    final fontWeight =
-        FontWeight.lerp(style.fontWeight ?? lineStyle?.fontWeight ?? FontWeight.normal, FontWeight.w900, 0.25);
+    final lineStyle = style.fontSize == null || style.fontWeight == null
+        ? _getLineStyle(defaultStyles)
+        : null;
+    final fontWeight = FontWeight.lerp(
+        style.fontWeight ?? lineStyle?.fontWeight ?? FontWeight.normal,
+        FontWeight.w900,
+        0.25);
     final fontSize = style.fontSize ?? lineStyle?.fontSize ?? 16;
     final y = (superScript ? -0.4 : 0.14) * fontSize;
-    final charStyle =
-        style.copyWith(fontFeatures: <FontFeature>[], fontWeight: fontWeight, fontSize: fontSize * 0.7);
+    final charStyle = style.copyWith(
+        fontFeatures: <FontFeature>[],
+        fontWeight: fontWeight,
+        fontSize: fontSize * 0.7);
     //
     final offset = Offset(0, y);
     final children = <WidgetSpan>[];
@@ -472,17 +497,21 @@ class _TextLineState extends State<TextLine>
     return children[0];
   }
 
-  InlineSpan _getTextSpanFromNode(DefaultStyles defaultStyles, Node node, Style lineStyle) {
+  InlineSpan _getTextSpanFromNode(
+      DefaultStyles defaultStyles, Node node, Style lineStyle) {
     final textNode = node as leaf.QuillText;
     final nodeStyle = textNode.style;
-    final isLink =
-        nodeStyle.containsKey(Attribute.link.key) && nodeStyle.attributes[Attribute.link.key]!.value != null;
-    final style = _getInlineTextStyle(nodeStyle, defaultStyles, lineStyle, isLink);
-    if (widget.controller.config.requireScriptFontFeatures == false && textNode.value.isNotEmpty) {
+    final isLink = nodeStyle.containsKey(Attribute.link.key) &&
+        nodeStyle.attributes[Attribute.link.key]!.value != null;
+    final style =
+        _getInlineTextStyle(nodeStyle, defaultStyles, lineStyle, isLink);
+    if (widget.controller.config.requireScriptFontFeatures == false &&
+        textNode.value.isNotEmpty) {
       if (nodeStyle.containsKey(Attribute.script.key)) {
         final attr = nodeStyle.attributes[Attribute.script.key];
         if (attr == Attribute.superscript || attr == Attribute.subscript) {
-          return _scriptSpan(textNode.value, attr == Attribute.superscript, style, defaultStyles);
+          return _scriptSpan(textNode.value, attr == Attribute.superscript,
+              style, defaultStyles);
         }
       }
     }
@@ -496,7 +525,8 @@ class _TextLineState extends State<TextLine>
     );
   }
 
-  TextStyle _getInlineTextStyle(Style nodeStyle, DefaultStyles defaultStyles, Style lineStyle, bool isLink) {
+  TextStyle _getInlineTextStyle(Style nodeStyle, DefaultStyles defaultStyles,
+      Style lineStyle, bool isLink) {
     var res = const TextStyle(); // This is inline text style
     final color = nodeStyle.attributes[Attribute.color.key];
 
@@ -514,7 +544,8 @@ class _TextLineState extends State<TextLine>
           if (color?.value is String) {
             textColor = stringToColor(color?.value, textColor, defaultStyles);
           }
-          res = _merge(res.copyWith(decorationColor: textColor), s!.copyWith(decorationColor: textColor));
+          res = _merge(res.copyWith(decorationColor: textColor),
+              s!.copyWith(decorationColor: textColor));
         } else if (k == Attribute.link.key && !isLink) {
           // null value for link should be ignored
           // i.e. nodeStyle.attributes[Attribute.link.key]!.value == null
@@ -574,7 +605,8 @@ class _TextLineState extends State<TextLine>
 
     final background = nodeStyle.attributes[Attribute.background.key];
     if (background != null && background.value != null) {
-      final backgroundColor = stringToColor(background.value, null, defaultStyles);
+      final backgroundColor =
+          stringToColor(background.value, null, defaultStyles);
       res = res.merge(TextStyle(backgroundColor: backgroundColor));
     }
 
@@ -606,9 +638,11 @@ class _TextLineState extends State<TextLine>
 
     if (isLink && canLaunchLinks) {
       if (isDesktop || widget.readOnly) {
-        _linkRecognizers[segment] = TapGestureRecognizer()..onTap = () => _tapNodeLink(segment);
+        _linkRecognizers[segment] = TapGestureRecognizer()
+          ..onTap = () => _tapNodeLink(segment);
       } else {
-        _linkRecognizers[segment] = LongPressGestureRecognizer()..onLongPress = () => _longPressLink(segment);
+        _linkRecognizers[segment] = LongPressGestureRecognizer()
+          ..onLongPress = () => _longPressLink(segment);
       }
     }
     return _linkRecognizers[segment];
@@ -652,7 +686,8 @@ class _TextLineState extends State<TextLine>
         break;
       case LinkMenuAction.remove:
         final range = getLinkRange(node);
-        widget.controller.formatText(range.start, range.end - range.start, Attribute.link);
+        widget.controller
+            .formatText(range.start, range.end - range.start, Attribute.link);
         break;
       case LinkMenuAction.none:
         break;
@@ -667,9 +702,9 @@ class _TextLineState extends State<TextLine>
     if (b.decoration != null) {
       decorations.add(b.decoration);
     }
-    return a
-        .merge(b)
-        .apply(decoration: TextDecoration.combine(List.castFrom<dynamic, TextDecoration>(decorations)));
+    return a.merge(b).apply(
+        decoration: TextDecoration.combine(
+            List.castFrom<dynamic, TextDecoration>(decorations)));
   }
 
   @override
@@ -685,7 +720,8 @@ class _TextLineState extends State<TextLine>
   GlobalKey<State<StatefulWidget>> get forwardKey => GlobalKey();
 
   @override
-  RenderParagraph? get paragraph => _richTextKey.currentContext?.findRenderObject() as RenderParagraph?;
+  RenderParagraph? get paragraph =>
+      _richTextKey.currentContext?.findRenderObject() as RenderParagraph?;
 
   @override
   TextPainter get prototypePainter {
@@ -708,7 +744,7 @@ class _TextLineState extends State<TextLine>
           text: TextSpan(text: ' ', style: styles),
           textAlign: _getTextAlign(),
           textDirection: widget.textDirection,
-        strutStyle: StrutStyle.fromTextStyle(styles),
+          strutStyle: StrutStyle.fromTextStyle(styles),
         );
   }
 }

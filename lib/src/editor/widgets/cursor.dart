@@ -104,7 +104,8 @@ class CursorCont extends ChangeNotifier {
   })  : _style = style,
         blink = ValueNotifier(false),
         color = ValueNotifier(style.color) {
-    _blinkOpacityController = AnimationController(vsync: tickerProvider, duration: _fadeDuration);
+    _blinkOpacityController =
+        AnimationController(vsync: tickerProvider, duration: _fadeDuration);
     _blinkOpacityController.addListener(_onColorTick);
   }
 
@@ -130,11 +131,14 @@ class CursorCont extends ChangeNotifier {
   Timer? _cursorTimer;
   bool _targetCursorVisibility = false;
 
-  final ValueNotifier<TextPosition?> _floatingCursorTextPosition = ValueNotifier(null);
+  final ValueNotifier<TextPosition?> _floatingCursorTextPosition =
+      ValueNotifier(null);
 
-  ValueNotifier<TextPosition?> get floatingCursorTextPosition => _floatingCursorTextPosition;
+  ValueNotifier<TextPosition?> get floatingCursorTextPosition =>
+      _floatingCursorTextPosition;
 
-  void setFloatingCursorTextPosition(TextPosition? position) => _floatingCursorTextPosition.value = position;
+  void setFloatingCursorTextPosition(TextPosition? position) =>
+      _floatingCursorTextPosition.value = position;
 
   bool get isFloatingCursorActive => floatingCursorTextPosition.value != null;
 
@@ -217,7 +221,10 @@ class CursorCont extends ChangeNotifier {
   }
 
   void startOrStopCursorTimerIfNeeded(bool hasFocus, TextSelection selection) {
-    if (show.value && _cursorTimer == null && hasFocus && selection.isCollapsed) {
+    if (show.value &&
+        _cursorTimer == null &&
+        hasFocus &&
+        selection.isCollapsed) {
       startCursorTimer();
     } else if (_cursorTimer != null && (!hasFocus || !selection.isCollapsed)) {
       stopCursorTimer();
@@ -256,12 +263,16 @@ class CursorPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // relative (x, y) to global offset
-    var relativeCaretOffset = delegate!.getOffsetForCaret(position, delegate!.caretPrototype!);
+    var relativeCaretOffset =
+        delegate!.getOffsetForCaret(position, delegate!.caretPrototype!);
     if (lineHasEmbed && relativeCaretOffset == Offset.zero) {
       relativeCaretOffset = delegate!.getOffsetForCaret(
-          TextPosition(offset: position.offset - 1, affinity: position.affinity), delegate!.caretPrototype!);
+          TextPosition(
+              offset: position.offset - 1, affinity: position.affinity),
+          delegate!.caretPrototype!);
       // Hardcoded 6 as estimate of the width of a character
-      relativeCaretOffset = Offset(relativeCaretOffset.dx + 6, relativeCaretOffset.dy);
+      relativeCaretOffset =
+          Offset(relativeCaretOffset.dx + 6, relativeCaretOffset.dy);
     }
 
     final caretOffset = relativeCaretOffset + offset;
@@ -320,14 +331,17 @@ class CursorPainter extends CustomPainter {
   Offset _getPixelPerfectCursorOffset(
     Rect caretRect,
   ) {
-    final caretPosition = (delegate!.context.findRenderObject() as RenderBox).localToGlobal(caretRect.topLeft);
+    final caretPosition = (delegate!.context.findRenderObject() as RenderBox)
+        .localToGlobal(caretRect.topLeft);
     final pixelMultiple = 1.0 / devicePixelRatio;
 
     final pixelPerfectOffsetX = caretPosition.dx.isFinite
-        ? (caretPosition.dx / pixelMultiple).round() * pixelMultiple - caretPosition.dx
+        ? (caretPosition.dx / pixelMultiple).round() * pixelMultiple -
+            caretPosition.dx
         : caretPosition.dx;
     final pixelPerfectOffsetY = caretPosition.dy.isFinite
-        ? (caretPosition.dy / pixelMultiple).round() * pixelMultiple - caretPosition.dy
+        ? (caretPosition.dy / pixelMultiple).round() * pixelMultiple -
+            caretPosition.dy
         : caretPosition.dy;
 
     return Offset(pixelPerfectOffsetX, pixelPerfectOffsetY);

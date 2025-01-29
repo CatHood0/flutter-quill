@@ -14,9 +14,37 @@ import '../../delegate.dart';
 import '../inline/text_line.dart';
 import '../text_selection.dart';
 
-const List<int> arabianRomanNumbers = [1000, 900, 500, 400, 100, 90, 50, 40, 10, 9, 5, 4, 1];
+const List<int> arabianRomanNumbers = [
+  1000,
+  900,
+  500,
+  400,
+  100,
+  90,
+  50,
+  40,
+  10,
+  9,
+  5,
+  4,
+  1
+];
 
-const List<String> romanNumbers = ['M', 'CM', 'D', 'CD', 'C', 'XC', 'L', 'XL', 'X', 'IX', 'V', 'IV', 'I'];
+const List<String> romanNumbers = [
+  'M',
+  'CM',
+  'D',
+  'CD',
+  'C',
+  'XC',
+  'L',
+  'XL',
+  'X',
+  'IX',
+  'V',
+  'IV',
+  'I'
+];
 
 class TextBlock extends StatefulWidget {
   const TextBlock({
@@ -80,7 +108,8 @@ class TextBlock extends StatefulWidget {
   State<TextBlock> createState() => _EditableTextBlockState();
 }
 
-class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<TextBlock> {
+class _EditableTextBlockState extends State<TextBlock>
+    with SelectableMixin<TextBlock> {
   List<Widget> _children = [];
 
   @override
@@ -122,7 +151,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
       padding: widget.contentPadding ?? EdgeInsets.zero,
       child: Container(
         padding: _padding(),
-        decoration: _getDecorationForBlock(widget.block, defaultStyles) ?? const BoxDecoration(),
+        decoration: _getDecorationForBlock(widget.block, defaultStyles) ??
+            const BoxDecoration(),
         child: Column(
           textDirection: widget.textDirection,
           mainAxisSize: MainAxisSize.min,
@@ -141,7 +171,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     );
   }
 
-  BoxDecoration? _getDecorationForBlock(Block node, DefaultStyles? defaultStyles) {
+  BoxDecoration? _getDecorationForBlock(
+      Block node, DefaultStyles? defaultStyles) {
     final attrs = widget.block.style.attributes;
     if (attrs.containsKey(Attribute.blockQuote.key)) {
       // Verify if the direction is RTL and avoid passing the decoration
@@ -161,12 +192,14 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     return null;
   }
 
-  List<Widget> _buildChildren(BuildContext context, Map<int, int> indentLevelCounts, bool clearIndents) {
+  List<Widget> _buildChildren(BuildContext context,
+      Map<int, int> indentLevelCounts, bool clearIndents) {
     final defaultStyles = QuillStyles.getStyles(context, false);
     final numberPointWidthBuilder =
-        defaultStyles?.lists?.numberPointWidthBuilder ?? TextBlockUtils.defaultNumberPointWidthBuilder;
-    final indentWidthBuilder =
-        defaultStyles?.lists?.indentWidthBuilder ?? TextBlockUtils.defaultIndentWidthBuilder;
+        defaultStyles?.lists?.numberPointWidthBuilder ??
+            TextBlockUtils.defaultNumberPointWidthBuilder;
+    final indentWidthBuilder = defaultStyles?.lists?.indentWidthBuilder ??
+        TextBlockUtils.defaultIndentWidthBuilder;
 
     final count = widget.block.children.length;
     final children = <Widget>[];
@@ -174,7 +207,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
       indentLevelCounts.clear();
     }
     var index = 0;
-    for (final line in Iterable.castFrom<dynamic, Line>(widget.block.children)) {
+    for (final line
+        in Iterable.castFrom<dynamic, Line>(widget.block.children)) {
       index++;
       final textLine = TextLine(
         line: line,
@@ -190,7 +224,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
         customStyleBuilder: widget.customStyleBuilder,
         cursorCont: widget.cursorCont,
         hasFocus: widget.hasFocus,
-        horizontalSpacing: indentWidthBuilder(widget.block, context, count, numberPointWidthBuilder),
+        horizontalSpacing: indentWidthBuilder(
+            widget.block, context, count, numberPointWidthBuilder),
         verticalSpacing: _getSpacingForLine(line, index, count, defaultStyles),
         styles: widget.styles!,
         readOnly: widget.readOnly,
@@ -223,31 +258,40 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     final fontSize = defaultStyles.paragraph?.style.fontSize ?? 16;
     final attrs = line.style.attributes;
     final numberPointWidthBuilder =
-        defaultStyles.lists?.numberPointWidthBuilder ?? TextBlockUtils.defaultNumberPointWidthBuilder;
+        defaultStyles.lists?.numberPointWidthBuilder ??
+            TextBlockUtils.defaultNumberPointWidthBuilder;
 
     // Of the color button
-    final fontColor = line.toDelta().operations.first.attributes?[Attribute.color.key] != null
-        ? hexToColor(
-            line.toDelta().operations.first.attributes?[Attribute.color.key],
-          )
-        : null;
+    final fontColor =
+        line.toDelta().operations.first.attributes?[Attribute.color.key] != null
+            ? hexToColor(
+                line
+                    .toDelta()
+                    .operations
+                    .first
+                    .attributes?[Attribute.color.key],
+              )
+            : null;
 
     // Of the size button
-    final size = line.toDelta().operations.first.attributes?[Attribute.size.key] != null
-        ? getFontSizeAsDouble(
-            line.toDelta().operations.first.attributes?[Attribute.size.key],
-            defaultStyles: defaultStyles,
-          )
-        : null;
+    final size =
+        line.toDelta().operations.first.attributes?[Attribute.size.key] != null
+            ? getFontSizeAsDouble(
+                line.toDelta().operations.first.attributes?[Attribute.size.key],
+                defaultStyles: defaultStyles,
+              )
+            : null;
 
     // Of the alignment buttons
     // final textAlign = line.style.attributes[Attribute.align.key]?.value != null
     //     ? getTextAlign(line.style.attributes[Attribute.align.key]?.value)
     //     : null;
-    final attribute = attrs[Attribute.list.key] ?? attrs[Attribute.codeBlock.key];
+    final attribute =
+        attrs[Attribute.list.key] ?? attrs[Attribute.codeBlock.key];
     final isUnordered = attribute == Attribute.ul;
     final isOrdered = attribute == Attribute.ol;
-    final isCheck = attribute == Attribute.checked || attribute == Attribute.unchecked;
+    final isCheck =
+        attribute == Attribute.checked || attribute == Attribute.unchecked;
     final isCodeBlock = attrs.containsKey(Attribute.codeBlock.key);
     if (attribute == null) return null;
     final leadingConfig = LeadingConfig(
@@ -299,7 +343,9 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
       lineSize: isCheck ? fontSize : null,
       uiBuilder: isCheck ? defaultStyles.lists?.checkboxUIBuilder : null,
       value: attribute == Attribute.checked,
-      onCheckboxTap: !isCheck ? (value) {} : (value) => widget.onCheckboxTap(line.documentOffset, value),
+      onCheckboxTap: !isCheck
+          ? (value) {}
+          : (value) => widget.onCheckboxTap(line.documentOffset, value),
     );
     if (widget.customLeadingBlockBuilder != null) {
       final leadingBlockNodeBuilder = widget.customLeadingBlockBuilder?.call(
@@ -398,18 +444,21 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     return VerticalSpacing(top, bottom);
   }
 
-  RenderEditableBox? get firstChild => _children.firstOrNull as RenderEditableBox;
+  RenderEditableBox? get firstChild =>
+      _children.firstOrNull as RenderEditableBox;
   RenderEditableBox? get lastChild => _children.lastOrNull as RenderEditableBox;
 
   /// The previous child before the given child in the child list.
   RenderEditableBox? childBefore(RenderEditableBox child) {
-    final childParentData = child.parentData! as ContainerBoxParentData<RenderEditableBox>;
+    final childParentData =
+        child.parentData! as ContainerBoxParentData<RenderEditableBox>;
     return childParentData.previousSibling;
   }
 
   /// The next child after the given child in the child list.
   RenderEditableBox? childAfter(RenderEditableBox child) {
-    final childParentData = child.parentData! as ContainerBoxParentData<RenderEditableBox>;
+    final childParentData =
+        child.parentData! as ContainerBoxParentData<RenderEditableBox>;
     return childParentData.nextSibling;
   }
 
@@ -456,7 +505,9 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     if (offset.dy <= resolvedPadding.top) {
       return firstChild!;
     }
-    if (offset.dy >= (context.findRenderObject() as RenderBox).size.height - resolvedPadding.bottom) {
+    if (offset.dy >=
+        (context.findRenderObject() as RenderBox).size.height -
+            resolvedPadding.bottom) {
       return lastChild!;
     }
 
@@ -503,7 +554,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
   TextPosition getPositionForOffset(Offset offset) {
     final child = childAtOffset(offset);
     final parentData = child.parentData as BoxParentData;
-    final localPosition = child.getPositionForOffset(offset - parentData.offset);
+    final localPosition =
+        child.getPositionForOffset(offset - parentData.offset);
     return TextPosition(
       offset: localPosition.offset + child.container.offset,
       affinity: localPosition.affinity,
@@ -514,7 +566,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
   TextRange getWordBoundary(TextPosition position) {
     final child = childAtPosition(position);
     final nodeOffset = child.container.offset;
-    final childWord = child.getWordBoundary(TextPosition(offset: position.offset - nodeOffset));
+    final childWord = child
+        .getWordBoundary(TextPosition(offset: position.offset - nodeOffset));
     return TextRange(
       start: childWord.start + nodeOffset,
       end: childWord.end + nodeOffset,
@@ -526,7 +579,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     assert(position.offset < container.length);
 
     final child = childAtPosition(position);
-    final childLocalPosition = TextPosition(offset: position.offset - child.container.offset);
+    final childLocalPosition =
+        TextPosition(offset: position.offset - child.container.offset);
     final result = child.getPositionAbove(childLocalPosition);
     if (result != null) {
       return TextPosition(offset: result.offset + child.container.offset);
@@ -541,7 +595,9 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     final testPosition = TextPosition(offset: sibling.container.length - 1);
     final testOffset = sibling.getOffsetForCaret(testPosition);
     final finalOffset = Offset(caretOffset.dx, testOffset.dy);
-    return TextPosition(offset: sibling.container.offset + sibling.getPositionForOffset(finalOffset).offset);
+    return TextPosition(
+        offset: sibling.container.offset +
+            sibling.getPositionForOffset(finalOffset).offset);
   }
 
   @override
@@ -549,7 +605,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     assert(position.offset < container.length);
 
     final child = childAtPosition(position);
-    final childLocalPosition = TextPosition(offset: position.offset - child.container.offset);
+    final childLocalPosition =
+        TextPosition(offset: position.offset - child.container.offset);
     final result = child.getPositionBelow(childLocalPosition);
     if (result != null) {
       return TextPosition(offset: result.offset + child.container.offset);
@@ -563,20 +620,24 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
     final caretOffset = child.getOffsetForCaret(childLocalPosition);
     final testOffset = sibling.getOffsetForCaret(const TextPosition(offset: 0));
     final finalOffset = Offset(caretOffset.dx, testOffset.dy);
-    return TextPosition(offset: sibling.container.offset + sibling.getPositionForOffset(finalOffset).offset);
+    return TextPosition(
+        offset: sibling.container.offset +
+            sibling.getPositionForOffset(finalOffset).offset);
   }
 
   @override
   double preferredLineHeightByPosition(TextPosition position) {
     final child = childAtPosition(position) as SelectableMixin;
-    return child.preferredLineHeightByPosition(TextPosition(offset: position.offset - child.container.offset));
+    return child.preferredLineHeightByPosition(
+        TextPosition(offset: position.offset - child.container.offset));
   }
 
   @override
   TextSelectionPoint getBaseEndpointForSelection(TextSelection selection) {
     if (selection.isCollapsed) {
       return TextSelectionPoint(
-        Offset(0, preferredLineHeightByPosition(selection.extent)) + getOffsetForCaretByPosition(selection.extent),
+        Offset(0, preferredLineHeightByPosition(selection.extent)) +
+            getOffsetForCaretByPosition(selection.extent),
         null,
       );
     }
@@ -604,7 +665,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
       ),
     );
     return TextSelectionPoint(
-      basePoint.point + ((baseChild as RenderObject).parentData as BoxParentData).offset,
+      basePoint.point +
+          ((baseChild as RenderObject).parentData as BoxParentData).offset,
       basePoint.direction,
     );
   }
@@ -613,7 +675,8 @@ class _EditableTextBlockState extends State<TextBlock> with SelectableMixin<Text
   TextSelectionPoint getExtentEndpointForSelection(TextSelection selection) {
     if (selection.isCollapsed) {
       return TextSelectionPoint(
-        Offset(0, preferredLineHeightByPosition(selection.extent)) + getOffsetForCaretByPosition(selection.extent),
+        Offset(0, preferredLineHeightByPosition(selection.extent)) +
+            getOffsetForCaretByPosition(selection.extent),
         null,
       );
     }

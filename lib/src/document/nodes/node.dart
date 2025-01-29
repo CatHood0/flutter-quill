@@ -192,5 +192,7 @@ base class Root extends QuillContainer<QuillContainer<Node?>> {
   QuillContainer<Node?> get defaultChild => Line();
 
   @override
-  Delta toDelta() => children.map((child) => child.toDelta()).fold(Delta(), (a, b) => a.concat(b));
+  Delta toDelta() => children
+      .map((child) => child.toDelta())
+      .fold(Delta(), (a, b) => a.concat(b));
 }

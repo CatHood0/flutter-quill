@@ -35,7 +35,7 @@ class SelectableNodeWidget extends StatelessWidget {
           ? AlignmentDirectional.topStart
           : AlignmentDirectional.topEnd,
       children: [
-        //TODO: at this way we can add remote cursors 
+        //TODO: at this way we can add remote cursors
         if (cursorCont.style.paintAboveText)
           // block selection or selection area
           SelectionAreaForNodeWidget(

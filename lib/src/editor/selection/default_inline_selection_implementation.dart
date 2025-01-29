@@ -3,7 +3,8 @@ import 'package:flutter/rendering.dart';
 
 import 'selectable_mixin.dart';
 
-mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implements SelectableMixin<T> {
+mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
+    implements SelectableMixin<T> {
   TextPainter get prototypePainter;
   // component with selectable mixin implementation
   @override
@@ -23,18 +24,21 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implemen
 
   @override
   Offset getOffsetForCaretByPosition(TextPosition position) {
-    return getOffsetForCaret(position, caretPrototype!) + (renderBox!.parentData as BoxParentData).offset;
+    return getOffsetForCaret(position, caretPrototype!) +
+        (renderBox!.parentData as BoxParentData).offset;
   }
 
   @override
   TextPosition getPositionForOffset(Offset offset) {
-    return paragraph?.getPositionForOffset(offset - (renderBox!.parentData as BoxParentData).offset) ??
+    return paragraph?.getPositionForOffset(
+            offset - (renderBox!.parentData as BoxParentData).offset) ??
         const TextPosition(offset: 0);
   }
 
   @override
   TextRange getWordBoundary(TextPosition position) {
-    return paragraph?.getWordBoundary(position) ?? const TextRange(start: 0, end: 0);
+    return paragraph?.getWordBoundary(position) ??
+        const TextRange(start: 0, end: 0);
   }
 
   @override
@@ -59,7 +63,8 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implemen
 
   @override
   TextPosition globalToLocalPosition(TextPosition position) {
-    assert(container.containsOffset(position.offset), 'The provided text position is not in the current node');
+    assert(container.containsOffset(position.offset),
+        'The provided text position is not in the current node');
     return TextPosition(
       offset: position.offset - container.documentOffset,
       affinity: position.affinity,
@@ -74,7 +79,8 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implemen
 
   @override
   Rect getLocalRectForCaret(TextPosition position) {
-    final caretOffset = getOffsetForCaret(position, caretPrototype ?? getCaretPrototype(position));
+    final caretOffset = getOffsetForCaret(
+        position, caretPrototype ?? getCaretPrototype(position));
     var rect = Rect.fromLTWH(
       0,
       0,
@@ -134,7 +140,8 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implemen
   }
 
   @override
-  TextSelectionPoint getExtentEndpointForSelection(TextSelection textSelection) {
+  TextSelectionPoint getExtentEndpointForSelection(
+      TextSelection textSelection) {
     return _getEndpointForSelection(
       textSelection,
       false,
@@ -166,8 +173,10 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implemen
   @override
   TextPosition? getPositionAbove(TextPosition position) {
     double? maxOffset;
-    double limit() => maxOffset ??=
-        context.findRenderObject()!.semanticBounds.height / preferredLineHeightByPosition(position) + 1;
+    double limit() =>
+        maxOffset ??= context.findRenderObject()!.semanticBounds.height /
+                preferredLineHeightByPosition(position) +
+            1;
     bool checkLimit(double offset) => offset < 4.0 ? false : offset > limit();
 
     /// Move up by fraction of the default font height, larger font sizes need larger offset, embed images need larger offset
@@ -189,7 +198,9 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget> implemen
     final body = context.findRenderObject();
     final offset = getOffsetForCaretByPosition(textPosition)
         .translate(0, dyScale * preferredLineHeightByPosition(textPosition));
-    if ((body! as RenderBox).size.contains(offset - (body.parentData as BoxParentData).offset)) {
+    if ((body! as RenderBox)
+        .size
+        .contains(offset - (body.parentData as BoxParentData).offset)) {
       return getPositionForOffset(offset);
     }
     return null;
