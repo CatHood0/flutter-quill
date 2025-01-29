@@ -3,8 +3,8 @@ import 'dart:convert' show jsonDecode, jsonEncode;
 /// An object which can be embedded into a Quill document.
 ///
 /// See also:
-///
 /// * [BlockEmbed] which represents a block embed.
+///
 class Embeddable {
   const Embeddable(this.type, this.data);
 

@@ -61,8 +61,7 @@ abstract base class Leaf extends Node {
 
   @override
   Delta toDelta() {
-    final data =
-        _value is Embeddable ? (_value as Embeddable).toJson() : _value;
+    final data = _value is Embeddable ? (_value as Embeddable).toJson() : _value;
     return Delta()..insert(data, style.toJson());
   }
 
@@ -77,6 +76,7 @@ abstract base class Leaf extends Node {
       insertAfter(node);
     }
     node.format(style);
+    notify();
   }
 
   @override
@@ -93,6 +93,7 @@ abstract base class Leaf extends Node {
       node.next?.retain(0, remain, style);
     }
     node.format(style);
+    notify();
   }
 
   @override
@@ -114,6 +115,8 @@ abstract base class Leaf extends Node {
     if (prev != null) {
       prev.adjust();
     }
+    parent?.notify();
+    notify();
   }
 
   @override
@@ -142,15 +145,18 @@ abstract base class Leaf extends Node {
     if (!node.isFirst && prev is QuillText && prev.style == node.style) {
       prev.value = prev.value + node.value;
       node.unlink();
-      node = prev;
+      (node = prev).notify();
     }
 
     // Merging it with next node if style is the same.
     final next = node.next;
     if (!node.isLast && next is QuillText && next.style == node.style) {
       node.value = node.value + next.value;
-      next.unlink();
+      next
+        ..unlink()
+        ..notify();
     }
+    notify();
   }
 
   /// Splits this leaf node at [index] and returns new node.
@@ -189,6 +195,7 @@ abstract base class Leaf extends Node {
     assert(index >= 0 && index <= length);
     final cut = splitAt(index);
     cut?.unlink();
+    cut?.notify();
     return cut;
   }
 
@@ -208,8 +215,7 @@ abstract base class Leaf extends Node {
   /// instance. Returned node may still be the same as this node
   /// if provided [index] is `0`.
   Leaf _isolate(int index, int length) {
-    assert(
-        index >= 0 && index < this.length && (index + length <= this.length));
+    assert(index >= 0 && index < this.length && (index + length <= this.length));
     final target = splitAt(index)!..splitAt(length);
     return target;
   }

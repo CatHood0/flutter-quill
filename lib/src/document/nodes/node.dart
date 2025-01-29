@@ -1,5 +1,7 @@
 import 'dart:collection';
 
+import 'package:flutter/material.dart';
+
 import '../../../../quill_delta.dart';
 import '../../editor/embed/embed_editor_builder.dart';
 import '../attribute.dart';
@@ -17,9 +19,15 @@ import 'line.dart';
 ///
 /// The current parent node is exposed by the [parent] property. A node is
 /// considered [mounted] when the [parent] property is not `null`.
-abstract base class Node extends LinkedListEntry<Node> {
+abstract base class Node extends ChangeNotifier with LinkedListEntry<Node> {
   /// Current parent of this node. May be null if this node is not mounted.
   QuillContainer? parent;
+
+  final key = GlobalKey();
+
+  void notify() {
+    notifyListeners();
+  }
 
   /// The style attributes
   /// Note: This is not the same as style attribute of css
@@ -80,8 +88,11 @@ abstract base class Node extends LinkedListEntry<Node> {
     _offset = null;
     final next = this.next;
     if (next != null) {
-      next.clearOffsetCache();
+      next
+        ..clearOffsetCache()
+        ..notify();
     }
+    parent?.notify();
   }
 
   /// Offset in characters of this node in the document.
@@ -102,14 +113,20 @@ abstract base class Node extends LinkedListEntry<Node> {
 
   void applyAttribute(Attribute attribute) {
     _style = _style.merge(attribute);
+    notify();
+    parent?.notify();
   }
 
   void applyStyle(Style value) {
     _style = _style.mergeAll(value);
+    parent?.notify();
+    notify();
   }
 
   void clearStyle() {
     _style = const Style();
+    parent?.notify();
+    notify();
   }
 
   @override
@@ -117,6 +134,8 @@ abstract base class Node extends LinkedListEntry<Node> {
     assert(entry.parent == null && parent != null);
     entry.parent = parent;
     super.insertBefore(entry);
+    parent?.notify();
+    notify();
     clearLengthCache();
   }
 
@@ -125,6 +144,8 @@ abstract base class Node extends LinkedListEntry<Node> {
     assert(entry.parent == null && parent != null);
     entry.parent = parent;
     super.insertAfter(entry);
+    parent?.notify();
+    notify();
     clearLengthCache();
   }
 
@@ -133,6 +154,8 @@ abstract base class Node extends LinkedListEntry<Node> {
     assert(parent != null);
     clearLengthCache();
     parent = null;
+    parent?.notify();
+    notify();
     super.unlink();
   }
 
@@ -169,7 +192,5 @@ base class Root extends QuillContainer<QuillContainer<Node?>> {
   QuillContainer<Node?> get defaultChild => Line();
 
   @override
-  Delta toDelta() => children
-      .map((child) => child.toDelta())
-      .fold(Delta(), (a, b) => a.concat(b));
+  Delta toDelta() => children.map((child) => child.toDelta()).fold(Delta(), (a, b) => a.concat(b));
 }

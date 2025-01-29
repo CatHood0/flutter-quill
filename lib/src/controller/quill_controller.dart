@@ -37,7 +37,7 @@ class QuillController extends ChangeNotifier {
     this.onSelectionChanged,
     this.readOnly = false,
   })  : _document = document,
-        _selection = selection;
+        _selection = ValueNotifier(selection);
 
   factory QuillController.basic({
     QuillControllerConfig config = const QuillControllerConfig(),
@@ -83,7 +83,7 @@ class QuillController extends ChangeNotifier {
     _setDocumentSearchProperties();
 
     // Prevent the selection from
-    _selection = const TextSelection(baseOffset: 0, extentOffset: 0);
+    _selection.value = const TextSelection(baseOffset: 0, extentOffset: 0);
 
     notifyListeners();
   }
@@ -93,8 +93,11 @@ class QuillController extends ChangeNotifier {
   final bool keepStyleOnNewLine;
 
   /// Currently selected text within the [document].
-  TextSelection get selection => _selection;
-  TextSelection _selection;
+  TextSelection get selection => _selection.value;
+  /// A listenable for notice directly of changes whitin selection
+  @experimental
+  ValueNotifier<TextSelection> get listenableSelection => _selection;
+  ValueNotifier<TextSelection> _selection;
 
   /// Custom [replaceText] handler
   /// Return false to ignore the event
@@ -463,9 +466,9 @@ class QuillController extends ChangeNotifier {
 
   void _updateSelection(TextSelection textSelection,
       {bool insertNewline = false}) {
-    _selection = textSelection;
+    _selection.value = textSelection;
     final end = document.length - 1;
-    _selection = selection.copyWith(
+    _selection.value = selection.copyWith(
         baseOffset: math.min(selection.baseOffset, end),
         extentOffset: math.min(selection.extentOffset, end));
     if (keepStyleOnNewLine) {

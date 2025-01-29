@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/widgets.dart';
 
 import '../../common/utils/platform.dart';
-import 'box.dart';
+import '../selection/selectable_mixin.dart';
 
 /// Style properties of editing cursor.
 class CursorStyle {
@@ -92,7 +92,7 @@ class CursorStyle {
       paintAboveText.hashCode;
 }
 
-/// Controls the cursor of an editable widget.
+/// Controls the cursor of an delegate widget.
 ///
 /// This class is a [ChangeNotifier] and allows to listen for updates on the
 /// cursor [style].
@@ -104,8 +104,7 @@ class CursorCont extends ChangeNotifier {
   })  : _style = style,
         blink = ValueNotifier(false),
         color = ValueNotifier(style.color) {
-    _blinkOpacityController =
-        AnimationController(vsync: tickerProvider, duration: _fadeDuration);
+    _blinkOpacityController = AnimationController(vsync: tickerProvider, duration: _fadeDuration);
     _blinkOpacityController.addListener(_onColorTick);
   }
 
@@ -131,14 +130,11 @@ class CursorCont extends ChangeNotifier {
   Timer? _cursorTimer;
   bool _targetCursorVisibility = false;
 
-  final ValueNotifier<TextPosition?> _floatingCursorTextPosition =
-      ValueNotifier(null);
+  final ValueNotifier<TextPosition?> _floatingCursorTextPosition = ValueNotifier(null);
 
-  ValueNotifier<TextPosition?> get floatingCursorTextPosition =>
-      _floatingCursorTextPosition;
+  ValueNotifier<TextPosition?> get floatingCursorTextPosition => _floatingCursorTextPosition;
 
-  void setFloatingCursorTextPosition(TextPosition? position) =>
-      _floatingCursorTextPosition.value = position;
+  void setFloatingCursorTextPosition(TextPosition? position) => _floatingCursorTextPosition.value = position;
 
   bool get isFloatingCursorActive => floatingCursorTextPosition.value != null;
 
@@ -221,10 +217,7 @@ class CursorCont extends ChangeNotifier {
   }
 
   void startOrStopCursorTimerIfNeeded(bool hasFocus, TextSelection selection) {
-    if (show.value &&
-        _cursorTimer == null &&
-        hasFocus &&
-        selection.isCollapsed) {
+    if (show.value && _cursorTimer == null && hasFocus && selection.isCollapsed) {
       startCursorTimer();
     } else if (_cursorTimer != null && (!hasFocus || !selection.isCollapsed)) {
       stopCursorTimer();
@@ -238,44 +231,41 @@ class CursorCont extends ChangeNotifier {
 }
 
 /// Paints the editing cursor.
-class CursorPainter {
-  CursorPainter({
-    required this.editable,
+class CursorPainter extends CustomPainter {
+  const CursorPainter({
+    required this.delegate,
     required this.style,
-    required this.prototype,
     required this.color,
     required this.devicePixelRatio,
+    required this.offset,
+    required this.position,
+    required this.lineHasEmbed,
   });
 
-  final RenderContentProxyBox? editable;
+  final Offset offset;
+  final TextPosition position;
+  final bool lineHasEmbed;
+  final SelectableMixin? delegate;
   final CursorStyle style;
-  final Rect prototype;
   final Color color;
   final double devicePixelRatio;
 
   /// Paints cursor on [canvas] at specified [position].
   /// [offset] is global top left (x, y) of text line
   /// [position] is relative (x) in text line
-  void paint(
-    Canvas canvas,
-    Offset offset,
-    TextPosition position,
-    bool lineHasEmbed,
-  ) {
+  @override
+  void paint(Canvas canvas, Size size) {
     // relative (x, y) to global offset
-    var relativeCaretOffset = editable!.getOffsetForCaret(position, prototype);
+    var relativeCaretOffset = delegate!.getOffsetForCaret(position, delegate!.caretPrototype!);
     if (lineHasEmbed && relativeCaretOffset == Offset.zero) {
-      relativeCaretOffset = editable!.getOffsetForCaret(
-          TextPosition(
-              offset: position.offset - 1, affinity: position.affinity),
-          prototype);
+      relativeCaretOffset = delegate!.getOffsetForCaret(
+          TextPosition(offset: position.offset - 1, affinity: position.affinity), delegate!.caretPrototype!);
       // Hardcoded 6 as estimate of the width of a character
-      relativeCaretOffset =
-          Offset(relativeCaretOffset.dx + 6, relativeCaretOffset.dy);
+      relativeCaretOffset = Offset(relativeCaretOffset.dx + 6, relativeCaretOffset.dy);
     }
 
     final caretOffset = relativeCaretOffset + offset;
-    var caretRect = prototype.shift(caretOffset);
+    var caretRect = delegate!.caretPrototype!.shift(caretOffset);
     if (style.offset != null) {
       caretRect = caretRect.shift(style.offset!);
     }
@@ -289,7 +279,7 @@ class CursorPainter {
       caretRect = caretRect.shift(Offset(-caretRect.left, 0));
     }
 
-    final caretHeight = editable!.getFullHeightForCaret(position);
+    final caretHeight = delegate!.getFullHeightForCaret(position);
     if (caretHeight != null) {
       if (isAppleOSApp) {
         // Center the caret vertically along the text.
@@ -330,18 +320,19 @@ class CursorPainter {
   Offset _getPixelPerfectCursorOffset(
     Rect caretRect,
   ) {
-    final caretPosition = editable!.localToGlobal(caretRect.topLeft);
+    final caretPosition = (delegate!.context.findRenderObject() as RenderBox).localToGlobal(caretRect.topLeft);
     final pixelMultiple = 1.0 / devicePixelRatio;
 
     final pixelPerfectOffsetX = caretPosition.dx.isFinite
-        ? (caretPosition.dx / pixelMultiple).round() * pixelMultiple -
-            caretPosition.dx
+        ? (caretPosition.dx / pixelMultiple).round() * pixelMultiple - caretPosition.dx
         : caretPosition.dx;
     final pixelPerfectOffsetY = caretPosition.dy.isFinite
-        ? (caretPosition.dy / pixelMultiple).round() * pixelMultiple -
-            caretPosition.dy
+        ? (caretPosition.dy / pixelMultiple).round() * pixelMultiple - caretPosition.dy
         : caretPosition.dy;
 
     return Offset(pixelPerfectOffsetX, pixelPerfectOffsetY);
   }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
