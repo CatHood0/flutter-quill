@@ -244,12 +244,10 @@ class CursorPainter extends CustomPainter {
     required this.style,
     required this.color,
     required this.devicePixelRatio,
-    required this.offset,
     required this.position,
     required this.lineHasEmbed,
   });
 
-  final Offset offset;
   final TextPosition position;
   final bool lineHasEmbed;
   final SelectableMixin? delegate;
@@ -263,19 +261,16 @@ class CursorPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     // relative (x, y) to global offset
-    var relativeCaretOffset =
-        delegate!.getOffsetForCaret(position, delegate!.caretPrototype!);
-    if (lineHasEmbed && relativeCaretOffset == Offset.zero) {
-      relativeCaretOffset = delegate!.getOffsetForCaret(
+    var caretOffset = delegate!.getOffsetForCaretByPosition(position);
+    if (lineHasEmbed && caretOffset == Offset.zero) {
+      caretOffset = delegate!.getOffsetForCaret(
           TextPosition(
               offset: position.offset - 1, affinity: position.affinity),
           delegate!.caretPrototype!);
       // Hardcoded 6 as estimate of the width of a character
-      relativeCaretOffset =
-          Offset(relativeCaretOffset.dx + 6, relativeCaretOffset.dy);
+      caretOffset = Offset(caretOffset.dx + 6, caretOffset.dy);
     }
 
-    final caretOffset = relativeCaretOffset + offset;
     var caretRect = delegate!.caretPrototype!.shift(caretOffset);
     if (style.offset != null) {
       caretRect = caretRect.shift(style.offset!);
@@ -331,8 +326,7 @@ class CursorPainter extends CustomPainter {
   Offset _getPixelPerfectCursorOffset(
     Rect caretRect,
   ) {
-    final caretPosition = (delegate!.context.findRenderObject() as RenderBox)
-        .localToGlobal(caretRect.topLeft);
+    final caretPosition = delegate!.renderBox!.localToGlobal(caretRect.topLeft);
     final pixelMultiple = 1.0 / devicePixelRatio;
 
     final pixelPerfectOffsetX = caretPosition.dx.isFinite

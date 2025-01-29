@@ -10,7 +10,8 @@ import 'package:flutter/services.dart';
 import '../../../document/nodes/node.dart';
 import '../../editor.dart';
 
-TextSelection localSelection(Node node, TextSelection selection, fromParent) {
+TextSelection localSelection(
+    Node node, TextSelection selection, bool fromParent) {
   final base = fromParent ? node.offset : node.documentOffset;
   assert(base <= selection.end && selection.start <= base + node.length - 1);
 

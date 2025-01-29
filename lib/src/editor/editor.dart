@@ -710,10 +710,9 @@ class RenderEditor extends RenderEditableContainerBox
   Offset _getOffsetForCaret(TextPosition position) {
     final child = childAtPosition(position);
     final childPosition = child.globalToLocalPosition(position);
-    final boxParentData = child.renderBox!.parentData as BoxParentData;
     final localOffsetForCaret =
         child.getOffsetForCaretByPosition(childPosition);
-    return boxParentData.offset + localOffsetForCaret;
+    return localOffsetForCaret;
   }
 
   void setDocument(Document doc) {
@@ -807,12 +806,14 @@ class RenderEditor extends RenderEditableContainerBox
         affinity: textSelection.affinity,
       );
       final localOffset = child.getOffsetForCaretByPosition(localPosition);
-      final parentData = child.renderBox!.parentData as BoxParentData;
+      // should we remove it?
+      // before it was used to increate the offset of TextSelectionPoint
+      // but now it does not do nothing
+      // final parentData = child.renderBox!.parentData as BoxParentData;
       return <TextSelectionPoint>[
         TextSelectionPoint(
             Offset(0, child.preferredLineHeightByPosition(localPosition)) +
-                localOffset +
-                parentData.offset,
+                localOffset,
             null)
       ];
     }
@@ -944,14 +945,11 @@ class RenderEditor extends RenderEditableContainerBox
   }
 
   /// Extends current selection to the position closest to specified offset.
-  //TODO: work here
   void extendSelection(Offset to, {required SelectionChangedCause cause}) {
     /// The below logic does not exactly match the native version because
     /// we do not allow swapping of base and extent positions.
     assert(_extendSelectionOrigin != null);
     final position = getPositionForOffset(to);
-    print(position);
-
     if (position.offset < _extendSelectionOrigin!.baseOffset) {
       _handleSelectionChange(
         TextSelection(
@@ -1680,76 +1678,6 @@ class RenderEditableContainerBox extends RenderBox
     // this case possible, when editor not scrollable,
     // but minHeight > content height and tap was under content
     return container.last.selectable!;
-  }
-
-  container_node.QuillContainer? getNodeInOffset(
-    List<container_node.QuillContainer> sortedNodes,
-    Offset offset,
-    int start,
-    int end,
-  ) {
-    if (start < 0 && end >= sortedNodes.length) {
-      return null;
-    }
-
-    var min = _findCloseNode(
-      sortedNodes,
-      start,
-      end,
-      (rect) => rect.bottom <= offset.dy,
-    );
-
-    final filteredNodes = List.of(sortedNodes)
-      ..retainWhere((n) => n.rect.bottom == sortedNodes[min].rect.bottom);
-    min = 0;
-    if (filteredNodes.length > 1) {
-      min = _findCloseNode(
-        sortedNodes,
-        0,
-        filteredNodes.length - 1,
-        (rect) => rect.right <= offset.dx,
-      );
-    }
-
-    final node = filteredNodes[min];
-    if (node.children.isNotEmpty &&
-        node.children.first.renderBox != null &&
-        node.children.first.rect.top <= offset.dy) {
-      final children = node.children.toList(growable: false)
-        ..sort(
-          (a, b) => a.rect.bottom != b.rect.bottom
-              ? a.rect.bottom.compareTo(b.rect.bottom)
-              : a.rect.left.compareTo(b.rect.left),
-        );
-
-      return getNodeInOffset(
-        children.cast(),
-        offset,
-        0,
-        children.length - 1,
-      );
-    }
-    return node;
-  }
-
-  int _findCloseNode(
-    List<Node> sortedNodes,
-    int start,
-    int end,
-    bool Function(Rect rect) compare,
-  ) {
-    var min = start;
-    var max = end;
-    while (min <= max) {
-      final mid = min + ((max - min) >> 1);
-      final rect = sortedNodes[mid].rect;
-      if (compare(rect)) {
-        min = mid + 1;
-      } else {
-        max = mid - 1;
-      }
-    }
-    return min.clamp(start, end);
   }
 
   @override

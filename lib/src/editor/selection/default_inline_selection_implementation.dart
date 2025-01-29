@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 
@@ -24,15 +26,20 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
 
   @override
   Offset getOffsetForCaretByPosition(TextPosition position) {
-    return getOffsetForCaret(position, caretPrototype!) +
-        (renderBox!.parentData as BoxParentData).offset;
+    return getOffsetForCaret(position, caretPrototype!);
   }
 
   @override
   TextPosition getPositionForOffset(Offset offset) {
-    return paragraph?.getPositionForOffset(
-            offset - (renderBox!.parentData as BoxParentData).offset) ??
-        const TextPosition(offset: 0);
+    // we does not need to remove the parentData offset from the current
+    // becase... idk
+    // this code makes weird behaviors
+    //return paragraph?.getPositionForOffset(
+    //        offset - (renderBox!.parentData as BoxParentData).offset) ??
+    return paragraph?.getPositionForOffset(offset) ??
+        const TextPosition(
+          offset: 0,
+        );
   }
 
   @override
@@ -53,12 +60,11 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
 
   @override
   Offset getOffsetForCaret(TextPosition position, Rect caretPrototype) {
-    return (paragraph?.getOffsetForCaret(
-              position,
-              caretPrototype,
-            ) ??
-            const Offset(0, 0)) +
-        (renderBox!.parentData as BoxParentData).offset;
+    return paragraph?.getOffsetForCaret(
+          position,
+          caretPrototype,
+        ) ??
+        const Offset(0, 0);
   }
 
   @override
@@ -79,14 +85,14 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
 
   @override
   Rect getLocalRectForCaret(TextPosition position) {
-    final caretOffset = getOffsetForCaret(
-        position, caretPrototype ?? getCaretPrototype(position));
+    final caretOffset =
+        paragraph?.getOffsetForCaret(position, Rect.zero) ?? Offset.zero;
     var rect = Rect.fromLTWH(
-      0,
-      0,
+      max(0, caretOffset.dx - (cursorWidth / 2.0)),
+      caretOffset.dy,
       cursorWidth,
       cursorHeight,
-    ).shift(caretOffset);
+    );
     final cursorOffset = cursorCont.style.offset;
     // Add additional cursor offset (generally only if on iOS).
     if (cursorOffset != null) rect = rect.shift(cursorOffset);
@@ -121,7 +127,6 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
   }
 
   List<TextBox> getBoxes(TextSelection textSelection) {
-    // this is the parent key
     final parentData = renderBox!.parentData as BoxParentData?;
     return getBoxesForSelection(textSelection).map((box) {
       return TextBox.fromLTRBD(
@@ -173,10 +178,10 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
   @override
   TextPosition? getPositionAbove(TextPosition position) {
     double? maxOffset;
-    double limit() =>
-        maxOffset ??= context.findRenderObject()!.semanticBounds.height /
-                preferredLineHeightByPosition(position) +
-            1;
+    double limit() => maxOffset ??= renderBox!.semanticBounds.height /
+            this.preferredLineHeightByPosition(position) +
+        1;
+    // ?
     bool checkLimit(double offset) => offset < 4.0 ? false : offset > limit();
 
     /// Move up by fraction of the default font height, larger font sizes need larger offset, embed images need larger offset
@@ -195,13 +200,11 @@ mixin DefaultTextSelectionMixinImplementation<T extends StatefulWidget>
 
   TextPosition? _getPosition(TextPosition textPosition, double dyScale) {
     assert(textPosition.offset < container.length);
-    final body = context.findRenderObject();
-    final offset = getOffsetForCaretByPosition(textPosition)
-        .translate(0, dyScale * preferredLineHeightByPosition(textPosition));
-    if ((body! as RenderBox)
-        .size
-        .contains(offset - (body.parentData as BoxParentData).offset)) {
-      return getPositionForOffset(offset);
+    final body = renderBox;
+    final offset = getOffsetForCaretByPosition(textPosition).translate(
+        0, dyScale * this.preferredLineHeightByPosition(textPosition));
+    if (body!.size.contains(offset)) {
+      return this.getPositionForOffset(offset);
     }
     return null;
   }

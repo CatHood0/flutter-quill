@@ -1,9 +1,9 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
 
 import '../../../../flutter_quill.dart';
 import '../../../document/nodes/container.dart';
+import '../../widgets/text/text_selection.dart';
 import '../painter/selection_area_painter.dart';
 import '../selectable_mixin.dart';
 
@@ -38,26 +38,48 @@ class _SelectionAreaForNodeWidgetState
 
   Rect? prevBlockRect;
 
+  bool _containsCursor = false;
+
+  // we use these vars to avoid unnecessary rebuild
+  TextSelection? oldSelection;
+
   @override
   void initState() {
     widget.delegate.computeCaretPrototype();
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => updateSelectionRectsIfNeeded(),
+      (_) {
+        _updateSelectionRectsIfNeeded();
+      },
     );
+    if (widget.cursorCont.isFloatingCursorActive) {
+      widget.cursorCont.floatingCursorTextPosition.addListener(updateUI);
+    }
     super.initState();
   }
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _cachedOffset = null;
-      getEffectiveOffset();
-      updateSelectionRectsIfNeeded();
-    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {});
   }
 
-  bool _containsCursor = false;
+  @override
+  void dispose() {
+    widget.cursorCont.floatingCursorTextPosition.removeListener(updateUI);
+    super.dispose();
+  }
+
+  void updateUI() {
+    if (context.mounted) {
+      setState(() {});
+    }
+  }
+
+  bool _containsTextSelection(TextSelection current) {
+    return widget.container.documentOffset <= current.end &&
+        current.start <=
+            widget.container.documentOffset + widget.container.length - 1;
+  }
 
   bool containsCursor(TextSelection selection) {
     if (widget.cursorCont.isFloatingCursorActive) {
@@ -73,7 +95,8 @@ class _SelectionAreaForNodeWidgetState
     return _containsCursor;
   }
 
-  TextPosition _getPosition(TextSelection selection) {
+  // Get the local position of the caret
+  TextPosition _getLocalPositionOfCaret(TextSelection selection) {
     return widget.cursorCont.isFloatingCursorActive
         ? TextPosition(
             offset: widget.cursorCont.floatingCursorTextPosition.value!.offset -
@@ -87,88 +110,6 @@ class _SelectionAreaForNodeWidgetState
           );
   }
 
-  // get the offset of this area
-  Offset localToGlobalOffset() {
-    if (context.mounted) {
-      return widget.delegate.renderBox!.localToGlobal(Offset.zero);
-    }
-    return const Offset(0, 0);
-  }
-
-  Offset? _cachedOffset;
-
-  Offset getEffectiveOffset() {
-    _cachedOffset = localToGlobalOffset() +
-        (widget.delegate.renderBox!.parentData as BoxParentData).offset;
-    return _cachedOffset!;
-  }
-
-  void updateSelectionRectsIfNeeded([TextSelection? current]) {
-    setState(() {
-      if (!widget.hasFocus) {
-        prevCursorRect = null;
-        prevSelectionRects = null;
-        prevBlockRect = null;
-        return;
-      }
-      if (isEmbed) {
-        // set to nullable all values to avoid any unexpected rect
-        if (!widget.container
-            .containsOffset((current ?? widget.selection.value).baseOffset)) {
-          if (prevBlockRect != null) {
-            setState(() {
-              prevBlockRect = null;
-              prevCursorRect = null;
-              prevSelectionRects = null;
-            });
-          }
-        } else {
-          final rect = widget.delegate.getBlockRect();
-          if (prevBlockRect != rect) {
-            setState(() {
-              prevBlockRect = rect;
-              prevCursorRect = null;
-              prevSelectionRects = null;
-            });
-          }
-        }
-      } else if ((current ?? widget.selection.value).isCollapsed) {
-        prevSelectionRects = null;
-        prevBlockRect = null;
-        final box = widget.delegate.getLocalRectForCaret(TextPosition(
-            offset: (current ?? widget.selection.value).baseOffset +
-                widget.container.documentOffset));
-        final rect = Rect.fromLTRB(
-          box.left,
-          box.top,
-          box.right,
-          box.bottom,
-        );
-        if (rect != prevCursorRect || prevCursorRect == null) {
-          prevCursorRect = rect;
-        }
-      } else {
-        prevCursorRect = null;
-        prevBlockRect = null;
-        final rects = widget.delegate
-            .getBoxesForSelection(current ?? widget.selection.value)
-            .map(
-              (e) => Rect.fromLTRB(e.left, e.top, e.right, e.bottom),
-            )
-            .toList();
-        if (!listEquals(rects, prevSelectionRects)) {
-          prevSelectionRects = rects;
-        }
-      }
-    });
-  }
-
-  bool get isEmbed =>
-      widget.delegate.container is Embed ||
-      widget.delegate.container.children.length == 1 &&
-          ((widget.delegate.container.first as QuillText?)?.parent?.hasEmbed ??
-              false);
-
   @override
   Widget build(BuildContext context) {
     const sizedBox = SizedBox.shrink();
@@ -176,18 +117,15 @@ class _SelectionAreaForNodeWidgetState
         key: ValueKey(widget.container.key.toString()),
         valueListenable: widget.selection,
         builder: (ctx, value, child) {
+          if (!_containsTextSelection(value)) {
+            return sizedBox;
+          }
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            updateSelectionRectsIfNeeded();
+            _updateSelectionRectsIfNeeded();
           });
+
           if (isEmbed) {
-            if (!widget.hasFocus && !widget.cursorCont.show.value ||
-                !containsCursor(value)) {
-              return sizedBox;
-            }
-            final isIntoRangeOfNode = widget.container.containsOffset(
-              value.baseOffset,
-            );
-            if (!isIntoRangeOfNode || prevBlockRect == null) {
+            if (prevBlockRect == null) {
               return sizedBox;
             }
             return Positioned.fromRect(
@@ -201,26 +139,32 @@ class _SelectionAreaForNodeWidgetState
             );
           }
           if (value.isCollapsed) {
-            if (prevCursorRect == null) return sizedBox;
+            if (prevCursorRect == null || !containsCursor(value))
+              return sizedBox;
             return ValueListenableBuilder(
               valueListenable: widget.cursorCont.show,
               builder: (ctx, showValue, child) {
                 if (showValue) {
-                  return CustomPaint(
-                    willChange: true,
-                    painter: CursorPainter(
-                      delegate: widget.delegate,
-                      offset: _cachedOffset ?? getEffectiveOffset(),
-                      // embeds or blocks cannot have embeds
-                      lineHasEmbed: widget.container is Line
-                          ? (widget.container as Line).hasEmbed
-                          : false,
-                      position: _getPosition(value),
-                      style: widget.cursorCont.style,
-                      color: widget.cursorCont.color.value,
-                      devicePixelRatio: MediaQuery.devicePixelRatioOf(context),
-                    ),
-                  );
+                  return ValueListenableBuilder(
+                      valueListenable: widget.cursorCont.blink,
+                      builder: (context, blink, child) {
+                        if (!blink) return sizedBox;
+                        return CustomPaint(
+                          willChange: true,
+                          painter: CursorPainter(
+                            delegate: widget.delegate,
+                            // embeds or blocks cannot have embeds
+                            lineHasEmbed: widget.container is Line
+                                ? (widget.container as Line).hasEmbed
+                                : false,
+                            position: _getLocalPositionOfCaret(value),
+                            style: widget.cursorCont.style,
+                            color: widget.cursorCont.color.value,
+                            devicePixelRatio:
+                                MediaQuery.devicePixelRatioOf(context),
+                          ),
+                        );
+                      });
                 }
                 return child!;
               },
@@ -239,4 +183,115 @@ class _SelectionAreaForNodeWidgetState
           );
         });
   }
+
+  //
+  void _updateSelectionRectsIfNeeded([TextSelection? current]) {
+    final selection = current ?? widget.selection.value;
+    // avoid rebuiling since CursorCont is updated always internally
+    // by the timer
+    if (oldSelection == selection) {
+      return;
+    }
+    oldSelection = selection;
+    setState(() {
+      if (!widget.hasFocus) {
+        prevCursorRect = null;
+        prevSelectionRects = null;
+        prevBlockRect = null;
+        return;
+      }
+      if (isEmbed) {
+        // set to nullable all values to avoid any unexpected rect
+        if (!widget.container.containsOffset(selection.baseOffset)) {
+          if (prevBlockRect != null) {
+            prevBlockRect = null;
+            prevCursorRect = null;
+            prevSelectionRects = null;
+          }
+        } else {
+          final rect = widget.delegate.getBlockRect();
+          if (prevBlockRect != rect) {
+            prevBlockRect = rect;
+            prevCursorRect = null;
+            prevSelectionRects = null;
+          }
+        }
+      } else if (selection.isCollapsed) {
+        prevSelectionRects = null;
+        prevBlockRect = null;
+        final box = widget.delegate
+            .getLocalRectForCaret(TextPosition(offset: selection.baseOffset));
+        print(box);
+        if (box != prevCursorRect || prevCursorRect == null) {
+          prevCursorRect = box;
+        }
+      } else {
+        prevCursorRect = null;
+        prevBlockRect = null;
+        // check if the current selected part, is not exactly local
+        //
+        // Text [part --------|
+        // that are being ----| We are looking, if the selection, looks like this
+        // selected] In ------|
+        // this example
+        final localNodeoffset = widget.container.offset;
+        // the offset of the node but adding the children node len
+        final realOffsetOfNode =
+            widget.container.documentOffset + widget.container.length - 1;
+        // the offset of the node without add the children node len
+        final partialGlobalOffset = widget.container.documentOffset;
+        if (partialGlobalOffset <= selection.end &&
+            selection.start <= realOffsetOfNode) {
+          final local = localSelection(widget.container, selection, true);
+          prevSelectionRects = widget.delegate
+              .getBoxesForSelection(
+                local,
+              )
+              .map((e) => e.toRect())
+              .toList();
+          // check if the current selected part is not exactly local
+          // but also is selecting empty nodes
+          //
+          // Text [part --------|
+          //  ------------------| We are looking, if the selection, looks like this
+          //  ------------------|
+          // selected] In ------|
+          // this example
+          if (widget.container.isEmpty &&
+              selection.baseOffset <= localNodeoffset &&
+              selection.extentOffset > localNodeoffset) {
+            // Paint a small rect at the start of empty lines that
+            // are contained by the selection.
+            final lineHeight = widget.delegate.preferredLineHeightByPosition(
+              TextPosition(
+                offset: widget.container.offset,
+              ),
+            );
+            prevSelectionRects?.add(TextBox.fromLTRBD(
+              0,
+              0,
+              3,
+              lineHeight,
+              Directionality.of(context),
+            ).toRect());
+          }
+        } else {
+          final rects = widget.delegate
+              .getBoxesForSelection(selection)
+              .map(
+                (e) => e.toRect(),
+              )
+              .toList();
+          if (!listEquals(rects, prevSelectionRects)) {
+            prevSelectionRects = rects;
+          }
+        }
+      }
+    });
+  }
+
+  bool get isEmbed =>
+      widget.delegate.container is Embed ||
+      widget.delegate.container.children.length == 1 &&
+          ((widget.delegate.container as Line).hasEmbed);
 }
