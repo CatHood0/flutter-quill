@@ -7,9 +7,6 @@ import '../../delta/delta_diff.dart';
 import '../../document/document.dart';
 import 'raw_editor.dart';
 
-// We probably can improve this, instead using NonDeltaInputClient
-// probably about making diff ops that are redundant when we only want to know the removed text and the
-// the change
 mixin RawEditorStateSelectionDelegateMixin on EditorState
     implements TextSelectionDelegate {
   @override

@@ -23,7 +23,9 @@ abstract base class Node extends ChangeNotifier with LinkedListEntry<Node> {
   /// Current parent of this node. May be null if this node is not mounted.
   QuillContainer? parent;
 
-  final key = GlobalKey();
+  /// The context key of this Node
+  final GlobalKey<State<StatefulWidget>> key = GlobalKey();
+  final LayerLink link = LayerLink();
 
   void notify() {
     notifyListeners();

@@ -12,28 +12,18 @@ import 'package:flutter/services.dart';
 import 'package:flutter_keyboard_visibility_temp_fork/flutter_keyboard_visibility_temp_fork.dart'
     show KeyboardVisibilityController;
 
-import '../../common/structs/horizontal_spacing.dart';
-import '../../common/structs/offset_value.dart';
-import '../../common/structs/vertical_spacing.dart';
+import '../../../flutter_quill.dart';
+import '../../common/utils/font.dart';
 import '../../common/utils/platform.dart';
-import '../../controller/quill_controller.dart';
 import '../../delta/delta_diff.dart';
-import '../../document/attribute.dart';
-import '../../document/document.dart';
-import '../../document/nodes/block.dart';
-import '../../document/nodes/line.dart';
-import '../../document/nodes/node.dart';
-import '../editor.dart';
-import '../widgets/cursor.dart';
-import '../widgets/default_styles.dart';
-import '../widgets/link.dart';
+import '../../editor_toolbar_shared/color.dart';
+import '../builders/component_container.dart';
+import '../builders/component_context.dart';
+import '../widgets/default_leading_components/leading_components.dart';
 import '../widgets/proxy.dart';
-import '../widgets/text/block/text_block.dart';
-import '../widgets/text/inline/text_line.dart';
 import '../widgets/text/text_selection.dart';
 import 'keyboard_shortcuts/editor_keyboard_shortcut_actions_manager.dart';
 import 'keyboard_shortcuts/editor_keyboard_shortcuts.dart';
-import 'raw_editor.dart';
 import 'raw_editor_render_object.dart';
 import 'raw_editor_state_selection_delegate_mixin.dart';
 import 'raw_editor_state_text_input_client_mixin.dart';
@@ -586,69 +576,58 @@ class QuillRawEditorState extends EditorState
       prevNodeOl = attrs[Attribute.list.key] == Attribute.ol;
       final nodeTextDirection = getDirectionOfNode(node, _textDirection);
       if (node is Line) {
-        result.add(
-          Directionality(
-            textDirection: nodeTextDirection,
-            child: TextLine(
-              key: node.key,
-              line: node,
-              textDirection: _textDirection,
-              embedBuilder: widget.config.embedBuilder,
-              customStyleBuilder: widget.config.customStyleBuilder,
-              customRecognizerBuilder: widget.config.customRecognizerBuilder,
-              styles: _styles!,
-              readOnly: widget.config.readOnly,
-              controller: controller,
-              linkActionPicker: _linkActionPicker,
-              cursorCont: _cursorCont,
-              hasFocus: _hasFocus,
-              onLaunchUrl: widget.config.onLaunchUrl,
-              customLinkPrefixes: widget.config.customLinkPrefixes,
-              composingRange: composingRange.value,
-              horizontalSpacing: _getHorizontalSpacingForLine(node, _styles),
-              verticalSpacing: _getVerticalSpacingForLine(node, _styles),
-            ),
-          ),
-        );
+        if (widget.config.builders.isNotEmpty) {
+          final builders = widget.config.builders;
+          for (final builder in builders) {
+            if (builder.validate(node)) {
+              result.add(QuillComponentContainer(
+                  builder: (ctx) {
+                    return builder.build(
+                      QuillComponentContext(
+                        buildContext: context,
+                        node: node,
+                        styles: node.style,
+                        indentLevelCounts: indentLevelCounts,
+                        extra: QuillWidgetParams(
+                          scrollBottomInset: widget.config.scrollBottomInset,
+                          horizontalSpacing:
+                              _getHorizontalSpacingForLine(node, _styles),
+                          verticalSpacing:
+                              _getVerticalSpacingForLine(node, _styles),
+                          direction: nodeTextDirection,
+                          composingRange: composingRange.value,
+                          linksPrefixes: widget.config.customLinkPrefixes,
+                          onLaunchUrl: widget.config.onLaunchUrl,
+                          controller: controller,
+                          editorConfigs: widget.config,
+                          defaultStyles: _styles!,
+                          isFocusedEditor: _hasFocus,
+                          enabledInteractions:
+                              widget.config.enableInteractiveSelection,
+                          cursorCont: _cursorCont,
+                          linkActionPicker: _linkActionPicker,
+                          customStyleBuilder: widget.config.customStyleBuilder,
+                          customRecognizerBuilder:
+                              widget.config.customRecognizerBuilder,
+                          leading: null,
+                        ),
+                      ),
+                    );
+                  },
+                  node: node));
+            }
+          }
+        }
       } else if (node is Block) {
-        result.add(
-          Directionality(
-            textDirection: nodeTextDirection,
-            child: TextBlock(
-              key: node.key,
-              block: node,
-              controller: controller,
-              customLeadingBlockBuilder: widget.config.customLeadingBuilder,
-              textDirection: nodeTextDirection,
-              scrollBottomInset: widget.config.scrollBottomInset,
-              horizontalSpacing: _getHorizontalSpacingForBlock(node, _styles),
-              verticalSpacing: _getVerticalSpacingForBlock(node, _styles),
-              textSelection: controller.selection,
-              color: widget.config.selectionColor,
-              styles: _styles,
-              enableInteractiveSelection:
-                  widget.config.enableInteractiveSelection,
-              hasFocus: _hasFocus,
-              contentPadding: attrs.containsKey(Attribute.codeBlock.key)
-                  ? const EdgeInsets.all(16)
-                  : null,
-              embedBuilder: widget.config.embedBuilder,
-              linkActionPicker: _linkActionPicker,
-              onLaunchUrl: widget.config.onLaunchUrl,
-              cursorCont: _cursorCont,
-              indentLevelCounts: indentLevelCounts,
-              clearIndents: clearIndents,
-              onCheckboxTap: _handleCheckboxTap,
-              readOnly: widget.config.readOnly,
-              checkBoxReadOnly: widget.config.checkBoxReadOnly,
-              customRecognizerBuilder: widget.config.customRecognizerBuilder,
-              customStyleBuilder: widget.config.customStyleBuilder,
-              customLinkPrefixes: widget.config.customLinkPrefixes,
-              composingRange: composingRange.value,
-            ),
+        result.addAll(
+          _buildBlockChildren(
+            node,
+            context,
+            indentLevelCounts,
+            clearIndents,
+            nodeTextDirection,
           ),
         );
-
         clearIndents = false;
       } else {
         _dirty = false;
@@ -657,6 +636,279 @@ class QuillRawEditorState extends EditorState
     }
     _dirty = false;
     return result;
+  }
+
+  List<Widget> _buildBlockChildren(
+      Block block,
+      BuildContext context,
+      Map<int, int> indentLevelCounts,
+      bool clearIndents,
+      TextDirection direction) {
+    final defaultStyles = QuillStyles.getStyles(context, false);
+    final numberPointWidthBuilder =
+        defaultStyles?.lists?.numberPointWidthBuilder ??
+            TextBlockUtils.defaultNumberPointWidthBuilder;
+    final indentWidthBuilder = defaultStyles?.lists?.indentWidthBuilder ??
+        TextBlockUtils.defaultIndentWidthBuilder;
+
+    final count = block.children.length;
+    final children = <Widget>[];
+    if (clearIndents) {
+      indentLevelCounts.clear();
+    }
+    var index = 0;
+    for (final line in Iterable.castFrom<dynamic, Line>(block.children)) {
+      index++;
+      if (widget.config.builders.isNotEmpty) {
+        for (final builder in widget.config.builders) {
+          children.add(
+            builder.build(
+              QuillComponentContext(
+                buildContext: context,
+                node: line,
+                styles: line.style,
+                indentLevelCounts: indentLevelCounts,
+                extra: QuillWidgetParams(
+                  horizontalSpacing:
+                      _getHorizontalSpacingForBlock(block, defaultStyles) +
+                          indentWidthBuilder(
+                            block,
+                            context,
+                            count,
+                            numberPointWidthBuilder,
+                          ),
+                  scrollBottomInset: widget.config.scrollBottomInset,
+                  verticalSpacing:
+                      _getVerticalSpacingForBlock(block, defaultStyles) +
+                          _getSpacingForLine(line, index, count, defaultStyles),
+                  direction: direction,
+                  composingRange: composingRange.value,
+                  linksPrefixes: widget.config.customLinkPrefixes,
+                  onLaunchUrl: widget.config.onLaunchUrl!,
+                  controller: controller,
+                  editorConfigs: widget.config,
+                  defaultStyles: _styles!,
+                  isFocusedEditor: _hasFocus,
+                  enabledInteractions: widget.config.enableInteractiveSelection,
+                  cursorCont: _cursorCont,
+                  linkActionPicker: _linkActionPicker,
+                  customStyleBuilder: widget.config.customStyleBuilder,
+                  customRecognizerBuilder:
+                      widget.config.customRecognizerBuilder,
+                  leading: _buildLeading(
+                    context: context,
+                    line: line,
+                    index: index,
+                    indentLevelCounts: indentLevelCounts,
+                    count: count,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+      }
+    }
+    return children.toList(growable: false);
+  }
+
+  VerticalSpacing _getSpacingForLine(
+    Line node,
+    int index,
+    int count,
+    DefaultStyles? defaultStyles,
+  ) {
+    var top = 0.0, bottom = 0.0;
+
+    final attrs = node.style.attributes;
+    if (attrs.containsKey(Attribute.header.key)) {
+      final level = attrs[Attribute.header.key]!.value;
+      switch (level) {
+        case 1:
+          top = defaultStyles!.h1!.verticalSpacing.top;
+          bottom = defaultStyles.h1!.verticalSpacing.bottom;
+          break;
+        case 2:
+          top = defaultStyles!.h2!.verticalSpacing.top;
+          bottom = defaultStyles.h2!.verticalSpacing.bottom;
+          break;
+        case 3:
+          top = defaultStyles!.h3!.verticalSpacing.top;
+          bottom = defaultStyles.h3!.verticalSpacing.bottom;
+          break;
+        case 4:
+          top = defaultStyles!.h4!.verticalSpacing.top;
+          bottom = defaultStyles.h4!.verticalSpacing.bottom;
+          break;
+        case 5:
+          top = defaultStyles!.h5!.verticalSpacing.top;
+          bottom = defaultStyles.h5!.verticalSpacing.bottom;
+          break;
+        case 6:
+          top = defaultStyles!.h6!.verticalSpacing.top;
+          bottom = defaultStyles.h6!.verticalSpacing.bottom;
+          break;
+        default:
+          throw ArgumentError('Invalid level $level');
+      }
+    } else {
+      final VerticalSpacing lineSpacing;
+      if (attrs.containsKey(Attribute.blockQuote.key)) {
+        lineSpacing = defaultStyles!.quote!.lineSpacing;
+      } else if (attrs.containsKey(Attribute.indent.key)) {
+        lineSpacing = defaultStyles!.indent!.lineSpacing;
+      } else if (attrs.containsKey(Attribute.list.key)) {
+        lineSpacing = defaultStyles!.lists!.lineSpacing;
+      } else if (attrs.containsKey(Attribute.codeBlock.key)) {
+        lineSpacing = defaultStyles!.code!.lineSpacing;
+      } else if (attrs.containsKey(Attribute.align.key)) {
+        lineSpacing = defaultStyles!.align!.lineSpacing;
+      } else {
+        // use paragraph linespacing as a default
+        lineSpacing = defaultStyles!.paragraph!.lineSpacing;
+      }
+      top = lineSpacing.top;
+      bottom = lineSpacing.bottom;
+    }
+
+    if (index == 1) {
+      top = 0.0;
+    }
+
+    if (index == count) {
+      bottom = 0.0;
+    }
+
+    return VerticalSpacing(top, bottom);
+  }
+
+  Widget? _buildLeading({
+    required BuildContext context,
+    required Line line,
+    required int index,
+    required Map<int, int> indentLevelCounts,
+    required int count,
+  }) {
+    final defaultStyles = QuillStyles.getStyles(context, false)!;
+    final fontSize = defaultStyles.paragraph?.style.fontSize ?? 16;
+    final attrs = line.style.attributes;
+    final numberPointWidthBuilder =
+        defaultStyles.lists?.numberPointWidthBuilder ??
+            TextBlockUtils.defaultNumberPointWidthBuilder;
+
+    // Of the color button
+    final fontColor =
+        line.toDelta().operations.first.attributes?[Attribute.color.key] != null
+            ? hexToColor(
+                line
+                    .toDelta()
+                    .operations
+                    .first
+                    .attributes?[Attribute.color.key],
+              )
+            : null;
+
+    // Of the size button
+    final size =
+        line.toDelta().operations.first.attributes?[Attribute.size.key] != null
+            ? getFontSizeAsDouble(
+                line.toDelta().operations.first.attributes?[Attribute.size.key],
+                defaultStyles: defaultStyles,
+              )
+            : null;
+
+    // Of the alignment buttons
+    // final textAlign = line.style.attributes[Attribute.align.key]?.value != null
+    //     ? getTextAlign(line.style.attributes[Attribute.align.key]?.value)
+    //     : null;
+    final attribute =
+        attrs[Attribute.list.key] ?? attrs[Attribute.codeBlock.key];
+    final isUnordered = attribute == Attribute.ul;
+    final isOrdered = attribute == Attribute.ol;
+    final isCheck =
+        attribute == Attribute.checked || attribute == Attribute.unchecked;
+    final isCodeBlock = attrs.containsKey(Attribute.codeBlock.key);
+    if (attribute == null) return null;
+    final leadingConfig = LeadingConfig(
+      attribute: attribute,
+      attrs: attrs,
+      indentLevelCounts: indentLevelCounts,
+      index: isOrdered || isCodeBlock ? index : null,
+      count: count,
+      enabled: !isCheck
+          ? null
+          : !(widget.config.checkBoxReadOnly ?? controller.readOnly),
+      style: () {
+        if (isOrdered) {
+          return defaultStyles.leading!.style.copyWith(
+            fontSize: size,
+            color: fontColor,
+          );
+        }
+        if (isUnordered) {
+          return defaultStyles.leading!.style.copyWith(
+            fontWeight: FontWeight.bold,
+            fontSize: size,
+            color: fontColor,
+          );
+        }
+        if (isCheck) {
+          return null;
+        }
+        return defaultStyles.code!.style.copyWith(
+          color: defaultStyles.code!.style.color!.withValues(alpha: 0.4),
+        );
+      }(),
+      width: () {
+        if (isOrdered || isCodeBlock) {
+          return numberPointWidthBuilder(fontSize, count);
+        }
+        if (isUnordered) {
+          return numberPointWidthBuilder(fontSize, 1); // same as fontSize * 2
+        }
+        return null;
+      }(),
+      padding: () {
+        if (isOrdered || isUnordered) {
+          return fontSize / 2;
+        }
+        if (isCodeBlock) {
+          return fontSize;
+        }
+        return null;
+      }(),
+      lineSize: isCheck ? fontSize : null,
+      uiBuilder: isCheck ? defaultStyles.lists?.checkboxUIBuilder : null,
+      value: attribute == Attribute.checked,
+      onCheckboxTap: !isCheck
+          ? (value) {}
+          : (value) => _handleCheckboxTap(line.documentOffset, value),
+    );
+    if (widget.config.customLeadingBuilder != null) {
+      final leadingBlockNodeBuilder = widget.config.customLeadingBuilder?.call(
+        line,
+        leadingConfig,
+      );
+      if (leadingBlockNodeBuilder != null) {
+        return leadingBlockNodeBuilder;
+      }
+    }
+
+    if (isOrdered) {
+      return numberPointLeading(leadingConfig);
+    }
+
+    if (isUnordered) {
+      return bulletPointLeading(leadingConfig);
+    }
+
+    if (isCheck) {
+      return checkboxLeading(leadingConfig);
+    }
+    if (isCodeBlock) {
+      return codeBlockLineNumberLeading(leadingConfig);
+    }
+    return null;
   }
 
   HorizontalSpacing _getHorizontalSpacingForLine(

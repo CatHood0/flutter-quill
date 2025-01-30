@@ -11,4 +11,8 @@ class VerticalSpacing {
   final double bottom;
 
   static const zero = VerticalSpacing(0, 0);
+
+  VerticalSpacing operator +(covariant VerticalSpacing other) {
+    return VerticalSpacing(top + other.top, bottom + other.bottom);
+  }
 }

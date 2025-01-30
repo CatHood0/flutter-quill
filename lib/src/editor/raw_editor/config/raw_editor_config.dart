@@ -12,6 +12,7 @@ import '../../../editor/widgets/default_styles.dart';
 import '../../../editor/widgets/delegate.dart';
 import '../../../editor/widgets/link.dart';
 import '../../../toolbar/theme/quill_dialog_theme.dart';
+import '../../builders/component_node_builder.dart';
 import '../builders/leading_block_builder.dart';
 import 'events/events.dart';
 
@@ -28,6 +29,7 @@ class QuillRawEditorConfig {
     required this.autoFocus,
     required this.characterShortcutEvents,
     required this.spaceShortcutEvents,
+    required this.builders,
     @experimental this.onKeyPressed,
     this.showCursor = true,
     this.scrollable = true,
@@ -153,6 +155,9 @@ class QuillRawEditorConfig {
   ///```
   @experimental
   final KeyEventResult? Function(KeyEvent event, Node? node)? onKeyPressed;
+
+  @experimental
+  final List<QuillComponentBuilder> builders;
 
   /// Additional space around the editor contents.
   final EdgeInsetsGeometry padding;

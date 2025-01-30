@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:meta/meta.dart';
 
-import '../../../flutter_quill.dart';
-import '../../../internal.dart';
 import '../../common/extensions/node_ext.dart';
 import '../../document/nodes/container.dart';
 
@@ -9,55 +8,21 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
   Rect? _caretPrototype;
   Rect? get caretPrototype => _caretPrototype;
 
-  /// The node that is being wrapped by the selectable.
-  QuillContainer get container;
+  @internal
+  set setCaretPrototype(Rect caret) => _caretPrototype = caret;
 
-  GlobalKey get containerKey;
-
-  RenderBox? get renderBox => container.renderBox;
-
-  CursorCont get cursorCont;
-
-  double get cursorHeight =>
-      cursorCont.style.height ??
-      preferredLineHeightByPosition(
-        const TextPosition(offset: 0),
-      );
-
-  double get cursorWidth => cursorCont.style.width;
-
-  SelectableMixin<StatefulWidget> get forward =>
-      forwardKey.currentState as SelectableMixin;
-
-  // rich text key
+  /// this is the key of the references to the implementation of QuillRichText
   GlobalKey get forwardKey;
+
+  /// The node that is being wrapped by the selectable.
+  QuillContainer get node;
+
+  RenderBox? get renderBox => node.renderBox;
 
   /// Returns preferred line height at specified `position` in text.
   ///
   /// The `position` parameter must be relative to the [node]'s content.
   double get preferredLineHeight;
-
-  // TODO: This is no longer producing the highest-fidelity caret
-  // heights for Android, especially when non-alphabetic languages
-  // are involved. The current implementation overrides the height set
-  // here with the full measured height of the text on Android which looks
-  // superior (subjectively and in terms of fidelity) in _paintCaret. We
-  // should rework this properly to once again match the platform. The constant
-  // _kCaretHeightOffset scales poorly for small font sizes.
-  //
-  /// Gives the correct values to the caretPrototype that is used to calculate
-  /// the Rect for caret
-  ///
-  /// On iOS, the cursor is taller than the cursor on Android. The height
-  /// of the cursor for iOS is approximate and obtained through an eyeball
-  /// comparison.
-  void computeCaretPrototype() {
-    if (isIos) {
-      _caretPrototype = Rect.fromLTWH(0, 0, cursorWidth, cursorHeight + 2);
-    } else {
-      _caretPrototype = Rect.fromLTWH(0, 2, cursorWidth, cursorHeight - 4.0);
-    }
-  }
 
   /// Returns a point for the base selection handle used on touch-oriented
   /// devices.
@@ -65,23 +30,6 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
   /// The `selection` parameter is expected to be in local offsets to this
   /// render object's [node].
   TextSelectionPoint getBaseEndpointForSelection(TextSelection textSelection);
-
-  /// Returns a Rect for [Embed] nodes
-  Rect getBlockRect({
-    bool shiftWithBaseOffset = false,
-  }) {
-    final parentBox = renderBox;
-    final childBox = forwardKey.currentContext?.findRenderObject();
-    if (parentBox is RenderBox && childBox is RenderBox) {
-      final offset = childBox.localToGlobal(Offset.zero, ancestor: parentBox);
-      final size = parentBox.size;
-      if (shiftWithBaseOffset) {
-        return offset & (size - offset as Size);
-      }
-      return Offset.zero & (size - offset as Size);
-    }
-    return Rect.zero;
-  }
 
   /// Returns a list of rects that bound the given selection.
   ///

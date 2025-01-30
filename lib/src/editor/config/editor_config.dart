@@ -6,6 +6,7 @@ import 'package:meta/meta.dart' show experimental;
 
 import '../../document/nodes/node.dart';
 import '../../toolbar/theme/quill_dialog_theme.dart';
+import '../builders/component_node_builder.dart';
 import '../embed/embed_editor_builder.dart';
 import '../raw_editor/builders/leading_block_builder.dart';
 import '../raw_editor/config/events/events.dart';
@@ -27,6 +28,7 @@ class QuillEditorConfig {
     this.padding = EdgeInsets.zero,
     @experimental this.characterShortcutEvents = const [],
     @experimental this.spaceShortcutEvents = const [],
+    this.builders,
     this.autoFocus = false,
     this.expands = false,
     this.placeholder,
@@ -163,6 +165,9 @@ class QuillEditorConfig {
   ///```
   @experimental
   final KeyEventResult? Function(KeyEvent event, Node? node)? onKeyPressed;
+
+  @experimental
+  final List<QuillComponentBuilder>? builders;
 
   /// Override [readOnly] for checkbox.
   ///
@@ -456,6 +461,7 @@ class QuillEditorConfig {
     String? placeholder,
     List<CharacterShortcutEvent>? characterShortcutEvents,
     List<SpaceShortcutEvent>? spaceShortcutEvents,
+    List<QuillComponentBuilder>? builders,
     bool? checkBoxReadOnly,
     bool? disableClipboard,
     bool? scrollable,
@@ -512,6 +518,7 @@ class QuillEditorConfig {
       customLeadingBlockBuilder:
           customLeadingBlockBuilder ?? this.customLeadingBlockBuilder,
       placeholder: placeholder ?? this.placeholder,
+      builders: builders ?? this.builders,
       characterShortcutEvents:
           characterShortcutEvents ?? this.characterShortcutEvents,
       spaceShortcutEvents: spaceShortcutEvents ?? this.spaceShortcutEvents,

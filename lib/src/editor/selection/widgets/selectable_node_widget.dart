@@ -5,6 +5,15 @@ import '../../../document/nodes/container.dart';
 import '../selectable_mixin.dart';
 import 'selection_node_area_widget.dart';
 
+enum SupportedSelectionTypes {
+  // caret
+  cursor,
+  // drag selection
+  selection,
+  // only block areas
+  block,
+}
+
 class SelectableNodeWidget extends StatelessWidget {
   const SelectableNodeWidget({
     required this.selection,
@@ -13,9 +22,14 @@ class SelectableNodeWidget extends StatelessWidget {
     required this.container,
     required this.cursorCont,
     required this.hasFocus,
+    this.supportedSelectionTypes = const [
+      SupportedSelectionTypes.cursor,
+      SupportedSelectionTypes.selection,
+    ],
     super.key,
   });
 
+  final List<SupportedSelectionTypes> supportedSelectionTypes;
   final QuillContainer container;
   final ValueNotifier<TextSelection> selection;
   final SelectableMixin delegate;
