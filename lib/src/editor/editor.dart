@@ -587,7 +587,7 @@ class RenderEditor extends RenderEditableContainerBox
     var extentPoint =
         extentChild.getExtentEndpointForSelection(extentSelection);
     extentPoint = TextSelectionPoint(
-      extentPoint.point,// + extentParentData.offset,
+      extentPoint.point, // + extentParentData.offset,
       extentPoint.direction,
     );
 
@@ -772,8 +772,9 @@ class RenderEditor extends RenderEditableContainerBox
   TextSelection selectWordAtPosition(TextPosition position) {
     if (position.offset <= -1) return const TextSelection.collapsed(offset: -1);
     final word = getWordBoundary(position);
-    if (word.start <= -1 && word.end <= -1)
+    if (word.start <= -1 && word.end <= -1) {
       return const TextSelection.collapsed(offset: -1);
+    }
     // When long-pressing past the end of the text, we want a collapsed cursor.
     if (position.offset >= word.end) {
       return TextSelection.fromPosition(position);

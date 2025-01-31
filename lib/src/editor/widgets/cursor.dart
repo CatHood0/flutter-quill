@@ -309,10 +309,12 @@ class CursorPainter extends CustomPainter {
     }
 
     final pixelPerfectOffset = _getPixelPerfectCursorOffset(caretRect);
-    if (!pixelPerfectOffset.isFinite) {
-      return;
+    if (pixelPerfectOffset != null) {
+      if (!pixelPerfectOffset.isFinite) {
+        return;
+      }
+      caretRect = caretRect.shift(pixelPerfectOffset);
     }
-    caretRect = caretRect.shift(pixelPerfectOffset);
 
     final paint = Paint()..color = color;
     if (style.radius == null) {
@@ -323,10 +325,12 @@ class CursorPainter extends CustomPainter {
     }
   }
 
-  Offset _getPixelPerfectCursorOffset(
+  Offset? _getPixelPerfectCursorOffset(
     Rect caretRect,
   ) {
-    final caretPosition = delegate!.renderBox!.localToGlobal(caretRect.topLeft);
+    // this is throwing null error
+    final caretPosition = delegate?.renderBox?.localToGlobal(caretRect.topLeft);
+    if (caretPosition == null) return null;
     final pixelMultiple = 1.0 / devicePixelRatio;
 
     final pixelPerfectOffsetX = caretPosition.dx.isFinite

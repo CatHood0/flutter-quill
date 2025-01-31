@@ -9,12 +9,12 @@ import '../paragraph_component/paragraph_component.dart';
 
 final List<QuillComponentBuilder> standardsBuilders = List.unmodifiable(
   [
-    ParagraphComponent(),
     HeaderComponent(),
     ListOrderedComponent(),
     ListUnorderedComponent(),
     CheckBoxComponent(),
     CodeBlockComponent(),
     BlockquoteComponent(),
+    ParagraphComponent(),
   ],
 );

@@ -44,11 +44,10 @@ class QuillWidgetParams {
     required this.linkActionPicker,
     required this.customStyleBuilder,
     required this.customRecognizerBuilder,
-    required this.leading,
     required this.scrollBottomInset,
+    required this.onTapCheckBoxFun,
   });
 
-  final Widget? leading;
   final double scrollBottomInset;
   final LinkActionPicker linkActionPicker;
   final CustomStyleBuilder? customStyleBuilder;
@@ -65,4 +64,5 @@ class QuillWidgetParams {
   final TextRange composingRange;
   final List<String> linksPrefixes;
   final void Function(String)? onLaunchUrl;
+  final void Function(int offset, bool value)? onTapCheckBoxFun;
 }

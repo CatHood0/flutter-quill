@@ -13,13 +13,10 @@ import 'package:flutter_keyboard_visibility_temp_fork/flutter_keyboard_visibilit
     show KeyboardVisibilityController;
 
 import '../../../flutter_quill.dart';
-import '../../common/utils/font.dart';
 import '../../common/utils/platform.dart';
 import '../../delta/delta_diff.dart';
-import '../../editor_toolbar_shared/color.dart';
 import '../builders/component_container.dart';
 import '../builders/component_context.dart';
-import '../widgets/default_leading_components/leading_components.dart';
 import '../widgets/proxy.dart';
 import '../widgets/text/text_selection.dart';
 import 'keyboard_shortcuts/editor_keyboard_shortcut_actions_manager.dart';
@@ -390,33 +387,36 @@ class QuillRawEditorState extends EditorState
             SingleChildScrollView(
               controller: _scrollController,
               physics: widget.config.scrollPhysics,
-              child: CompositedTransformTarget(
-                link: _toolbarLayerLink,
-                child: MouseRegion(
-                  cursor: widget.config.readOnly
-                      ? widget.config.readOnlyMouseCursor
-                      : SystemMouseCursors.text,
-                  child: QuillRawEditorMultiChildRenderObject(
-                    key: _editorKey,
-                    offset: _scrollController.hasClients
-                        ? _scrollController.position
-                        : null,
-                    document: doc,
-                    selection: controller.selection,
-                    hasFocus: _hasFocus,
-                    scrollable: widget.config.scrollable,
-                    textDirection: _textDirection,
-                    startHandleLayerLink: _startHandleLayerLink,
-                    endHandleLayerLink: _endHandleLayerLink,
-                    onSelectionChanged: _handleSelectionChanged,
-                    onSelectionCompleted: _handleSelectionCompleted,
-                    scrollBottomInset: widget.config.scrollBottomInset,
-                    padding: widget.config.padding,
-                    maxContentWidth: widget.config.maxContentWidth,
-                    cursorController: _cursorCont,
-                    floatingCursorDisabled:
-                        widget.config.floatingCursorDisabled,
-                    children: _buildChildren(doc, context),
+              child: QuillStyles(
+                data: _styles!,
+                child: CompositedTransformTarget(
+                  link: _toolbarLayerLink,
+                  child: MouseRegion(
+                    cursor: widget.config.readOnly
+                        ? widget.config.readOnlyMouseCursor
+                        : SystemMouseCursors.text,
+                    child: QuillRawEditorMultiChildRenderObject(
+                      key: _editorKey,
+                      offset: _scrollController.hasClients
+                          ? _scrollController.position
+                          : null,
+                      document: doc,
+                      selection: controller.selection,
+                      hasFocus: _hasFocus,
+                      scrollable: widget.config.scrollable,
+                      textDirection: _textDirection,
+                      startHandleLayerLink: _startHandleLayerLink,
+                      endHandleLayerLink: _endHandleLayerLink,
+                      onSelectionChanged: _handleSelectionChanged,
+                      onSelectionCompleted: _handleSelectionCompleted,
+                      scrollBottomInset: widget.config.scrollBottomInset,
+                      padding: widget.config.padding,
+                      maxContentWidth: widget.config.maxContentWidth,
+                      cursorController: _cursorCont,
+                      floatingCursorDisabled:
+                          widget.config.floatingCursorDisabled,
+                      children: _buildChildren(doc, context),
+                    ),
                   ),
                 ),
               ),
@@ -427,27 +427,30 @@ class QuillRawEditorState extends EditorState
         CompositedTransformTarget(
           link: _toolbarLayerLink,
           child: Semantics(
-            child: MouseRegion(
-              cursor: widget.config.readOnly
-                  ? widget.config.readOnlyMouseCursor
-                  : SystemMouseCursors.text,
-              child: QuillRawEditorMultiChildRenderObject(
-                key: _editorKey,
-                document: doc,
-                selection: controller.selection,
-                hasFocus: _hasFocus,
-                scrollable: widget.config.scrollable,
-                cursorController: _cursorCont,
-                textDirection: _textDirection,
-                startHandleLayerLink: _startHandleLayerLink,
-                endHandleLayerLink: _endHandleLayerLink,
-                onSelectionChanged: _handleSelectionChanged,
-                onSelectionCompleted: _handleSelectionCompleted,
-                scrollBottomInset: widget.config.scrollBottomInset,
-                padding: widget.config.padding,
-                maxContentWidth: widget.config.maxContentWidth,
-                floatingCursorDisabled: widget.config.floatingCursorDisabled,
-                children: _buildChildren(doc, context),
+            child: QuillStyles(
+              data: _styles!,
+              child: MouseRegion(
+                cursor: widget.config.readOnly
+                    ? widget.config.readOnlyMouseCursor
+                    : SystemMouseCursors.text,
+                child: QuillRawEditorMultiChildRenderObject(
+                  key: _editorKey,
+                  document: doc,
+                  selection: controller.selection,
+                  hasFocus: _hasFocus,
+                  scrollable: widget.config.scrollable,
+                  cursorController: _cursorCont,
+                  textDirection: _textDirection,
+                  startHandleLayerLink: _startHandleLayerLink,
+                  endHandleLayerLink: _endHandleLayerLink,
+                  onSelectionChanged: _handleSelectionChanged,
+                  onSelectionCompleted: _handleSelectionCompleted,
+                  scrollBottomInset: widget.config.scrollBottomInset,
+                  padding: widget.config.padding,
+                  maxContentWidth: widget.config.maxContentWidth,
+                  floatingCursorDisabled: widget.config.floatingCursorDisabled,
+                  children: _buildChildren(doc, context),
+                ),
               ),
             ),
           ),
@@ -471,22 +474,19 @@ class QuillRawEditorState extends EditorState
         }
         _defaultOnTapOutside(event);
       },
-      child: QuillStyles(
-        data: _styles!,
-        child: EditorKeyboardShortcuts(
-          actions: _shortcutActionsManager.actions,
-          onKeyPressed: widget.config.onKeyPressed,
-          characterEvents: widget.config.characterShortcutEvents,
-          spaceEvents: widget.config.spaceShortcutEvents,
-          constraints: constraints,
-          focusNode: widget.config.focusNode,
-          controller: controller,
-          readOnly: widget.config.readOnly,
-          enableAlwaysIndentOnTab: widget.config.enableAlwaysIndentOnTab,
-          customShortcuts: widget.config.customShortcuts,
-          customActions: widget.config.customActions,
-          child: child,
-        ),
+      child: EditorKeyboardShortcuts(
+        actions: _shortcutActionsManager.actions,
+        onKeyPressed: widget.config.onKeyPressed,
+        characterEvents: widget.config.characterShortcutEvents,
+        spaceEvents: widget.config.spaceShortcutEvents,
+        constraints: constraints,
+        focusNode: widget.config.focusNode,
+        controller: controller,
+        readOnly: widget.config.readOnly,
+        enableAlwaysIndentOnTab: widget.config.enableAlwaysIndentOnTab,
+        customShortcuts: widget.config.customShortcuts,
+        customActions: widget.config.customActions,
+        child: child,
       ),
     );
   }
@@ -580,57 +580,109 @@ class QuillRawEditorState extends EditorState
           final builders = widget.config.builders;
           for (final builder in builders) {
             if (builder.validate(node)) {
-              result.add(SizedBox(
-                child: QuillComponentContainer(
-                    builder: (ctx) {
-                      return builder.build(
-                        QuillComponentContext(
-                          buildContext: context,
-                          node: node,
-                          styles: node.style,
-                          indentLevelCounts: indentLevelCounts,
-                          extra: QuillWidgetParams(
-                            scrollBottomInset: widget.config.scrollBottomInset,
-                            horizontalSpacing:
-                                _getHorizontalSpacingForLine(node, _styles),
-                            verticalSpacing:
-                                _getVerticalSpacingForLine(node, _styles),
-                            direction: nodeTextDirection,
-                            composingRange: composingRange.value,
-                            linksPrefixes: widget.config.customLinkPrefixes,
-                            onLaunchUrl: widget.config.onLaunchUrl,
-                            controller: controller,
-                            editorConfigs: widget.config,
-                            defaultStyles: _styles!,
-                            isFocusedEditor: _hasFocus,
-                            enabledInteractions:
-                                widget.config.enableInteractiveSelection,
-                            cursorCont: _cursorCont,
-                            linkActionPicker: _linkActionPicker,
-                            customStyleBuilder:
-                                widget.config.customStyleBuilder,
-                            customRecognizerBuilder:
-                                widget.config.customRecognizerBuilder,
-                            leading: null,
-                          ),
+              print(
+                  'Validated in Line node with builder type: ${builder.runtimeType}');
+              print('Validated Node: ${node.toDelta()}');
+              result.add(
+                QuillComponentContainer(
+                  node: node,
+                  builder: (ctx) {
+                    return builder.build(
+                      QuillComponentContext(
+                        buildContext: context,
+                        node: node,
+                        styles: node.style,
+                        indentLevelCounts: indentLevelCounts,
+                        extra: QuillWidgetParams(
+                          scrollBottomInset: widget.config.scrollBottomInset,
+                          horizontalSpacing:
+                              _getHorizontalSpacingForLine(node, _styles),
+                          verticalSpacing:
+                              _getVerticalSpacingForLine(node, _styles),
+                          direction: nodeTextDirection,
+                          composingRange: composingRange.value,
+                          linksPrefixes: widget.config.customLinkPrefixes,
+                          onLaunchUrl: widget.config.onLaunchUrl,
+                          controller: controller,
+                          editorConfigs: widget.config,
+                          defaultStyles: _styles!,
+                          isFocusedEditor: _hasFocus,
+                          enabledInteractions:
+                              widget.config.enableInteractiveSelection,
+                          cursorCont: _cursorCont,
+                          linkActionPicker: _linkActionPicker,
+                          customStyleBuilder: widget.config.customStyleBuilder,
+                          customRecognizerBuilder:
+                              widget.config.customRecognizerBuilder,
+                          onTapCheckBoxFun: node.style.attributes
+                                      .containsValue(Attribute.checked) ||
+                                  node.style.attributes
+                                      .containsValue(Attribute.unchecked)
+                              ? _handleCheckboxTap
+                              : null,
                         ),
-                      );
-                    },
-                    node: node),
-              ));
+                      ),
+                    );
+                  },
+                ),
+              );
+              break;
             }
           }
         }
       } else if (node is Block) {
-        result.addAll(
-          _buildBlockChildren(
-            node,
-            context,
-            indentLevelCounts,
-            clearIndents,
-            nodeTextDirection,
-          ),
-        );
+        if (clearIndents) {
+          indentLevelCounts.clear();
+        }
+        if (widget.config.builders.isNotEmpty) {
+          for (final builder in widget.config.builders) {
+            if (builder.validate(node)) {
+              result.add(
+                QuillComponentContainer(
+                  node: node,
+                  builder: (ctx) {
+                    return builder.build(
+                      QuillComponentContext(
+                        buildContext: context,
+                        node: node,
+                        styles: node.style,
+                        indentLevelCounts: indentLevelCounts,
+                        extra: QuillWidgetParams(
+                          horizontalSpacing:
+                              _getHorizontalSpacingForBlock(node),
+                          scrollBottomInset: widget.config.scrollBottomInset,
+                          verticalSpacing: _getVerticalSpacingForBlock(node),
+                          direction: nodeTextDirection,
+                          composingRange: composingRange.value,
+                          linksPrefixes: widget.config.customLinkPrefixes,
+                          onLaunchUrl: widget.config.onLaunchUrl,
+                          controller: controller,
+                          editorConfigs: widget.config,
+                          defaultStyles: _styles!,
+                          isFocusedEditor: _hasFocus,
+                          enabledInteractions:
+                              widget.config.enableInteractiveSelection,
+                          cursorCont: _cursorCont,
+                          linkActionPicker: _linkActionPicker,
+                          customStyleBuilder: widget.config.customStyleBuilder,
+                          customRecognizerBuilder:
+                              widget.config.customRecognizerBuilder,
+                          onTapCheckBoxFun: node.style.attributes
+                                      .containsValue(Attribute.checked) ||
+                                  node.style.attributes
+                                      .containsValue(Attribute.unchecked)
+                              ? _handleCheckboxTap
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
+                ),
+              );
+              break;
+            }
+          }
+        }
         clearIndents = false;
       } else {
         _dirty = false;
@@ -639,285 +691,6 @@ class QuillRawEditorState extends EditorState
     }
     _dirty = false;
     return result;
-  }
-
-  List<Widget> _buildBlockChildren(
-      Block block,
-      BuildContext context,
-      Map<int, int> indentLevelCounts,
-      bool clearIndents,
-      TextDirection direction) {
-    final defaultStyles = QuillStyles.getStyles(context, false);
-    final numberPointWidthBuilder =
-        defaultStyles?.lists?.numberPointWidthBuilder ??
-            TextBlockUtils.defaultNumberPointWidthBuilder;
-    final indentWidthBuilder = defaultStyles?.lists?.indentWidthBuilder ??
-        TextBlockUtils.defaultIndentWidthBuilder;
-
-    final count = block.children.length;
-    final children = <Widget>[];
-    if (clearIndents) {
-      indentLevelCounts.clear();
-    }
-    var index = 0;
-    for (final line in Iterable.castFrom<dynamic, Line>(block.children)) {
-      index++;
-      if (widget.config.builders.isNotEmpty) {
-        for (final builder in widget.config.builders) {
-          children.add(
-            QuillComponentContainer(
-                builder: (ctx) {
-                  return builder.build(
-                    QuillComponentContext(
-                      buildContext: context,
-                      node: line,
-                      styles: line.style,
-                      indentLevelCounts: indentLevelCounts,
-                      extra: QuillWidgetParams(
-                        horizontalSpacing: _getHorizontalSpacingForBlock(
-                                block, defaultStyles) +
-                            indentWidthBuilder(
-                              block,
-                              context,
-                              count,
-                              numberPointWidthBuilder,
-                            ),
-                        scrollBottomInset: widget.config.scrollBottomInset,
-                        verticalSpacing:
-                            _getVerticalSpacingForBlock(block, defaultStyles) +
-                                _getSpacingForLine(
-                                    line, index, count, defaultStyles),
-                        direction: direction,
-                        composingRange: composingRange.value,
-                        linksPrefixes: widget.config.customLinkPrefixes,
-                        onLaunchUrl: widget.config.onLaunchUrl!,
-                        controller: controller,
-                        editorConfigs: widget.config,
-                        defaultStyles: _styles!,
-                        isFocusedEditor: _hasFocus,
-                        enabledInteractions:
-                            widget.config.enableInteractiveSelection,
-                        cursorCont: _cursorCont,
-                        linkActionPicker: _linkActionPicker,
-                        customStyleBuilder: widget.config.customStyleBuilder,
-                        customRecognizerBuilder:
-                            widget.config.customRecognizerBuilder,
-                        leading: _buildLeading(
-                          context: context,
-                          line: line,
-                          index: index,
-                          indentLevelCounts: indentLevelCounts,
-                          count: count,
-                        ),
-                      ),
-                    ),
-                  );
-                },
-                node: block),
-          );
-        }
-      }
-    }
-    return children.toList(growable: false);
-  }
-
-  VerticalSpacing _getSpacingForLine(
-    Line node,
-    int index,
-    int count,
-    DefaultStyles? defaultStyles,
-  ) {
-    var top = 0.0, bottom = 0.0;
-
-    final attrs = node.style.attributes;
-    if (attrs.containsKey(Attribute.header.key)) {
-      final level = attrs[Attribute.header.key]!.value;
-      switch (level) {
-        case 1:
-          top = defaultStyles!.h1!.verticalSpacing.top;
-          bottom = defaultStyles.h1!.verticalSpacing.bottom;
-          break;
-        case 2:
-          top = defaultStyles!.h2!.verticalSpacing.top;
-          bottom = defaultStyles.h2!.verticalSpacing.bottom;
-          break;
-        case 3:
-          top = defaultStyles!.h3!.verticalSpacing.top;
-          bottom = defaultStyles.h3!.verticalSpacing.bottom;
-          break;
-        case 4:
-          top = defaultStyles!.h4!.verticalSpacing.top;
-          bottom = defaultStyles.h4!.verticalSpacing.bottom;
-          break;
-        case 5:
-          top = defaultStyles!.h5!.verticalSpacing.top;
-          bottom = defaultStyles.h5!.verticalSpacing.bottom;
-          break;
-        case 6:
-          top = defaultStyles!.h6!.verticalSpacing.top;
-          bottom = defaultStyles.h6!.verticalSpacing.bottom;
-          break;
-        default:
-          throw ArgumentError('Invalid level $level');
-      }
-    } else {
-      final VerticalSpacing lineSpacing;
-      if (attrs.containsKey(Attribute.blockQuote.key)) {
-        lineSpacing = defaultStyles!.quote!.lineSpacing;
-      } else if (attrs.containsKey(Attribute.indent.key)) {
-        lineSpacing = defaultStyles!.indent!.lineSpacing;
-      } else if (attrs.containsKey(Attribute.list.key)) {
-        lineSpacing = defaultStyles!.lists!.lineSpacing;
-      } else if (attrs.containsKey(Attribute.codeBlock.key)) {
-        lineSpacing = defaultStyles!.code!.lineSpacing;
-      } else if (attrs.containsKey(Attribute.align.key)) {
-        lineSpacing = defaultStyles!.align!.lineSpacing;
-      } else {
-        // use paragraph linespacing as a default
-        lineSpacing = defaultStyles!.paragraph!.lineSpacing;
-      }
-      top = lineSpacing.top;
-      bottom = lineSpacing.bottom;
-    }
-
-    if (index == 1) {
-      top = 0.0;
-    }
-
-    if (index == count) {
-      bottom = 0.0;
-    }
-
-    return VerticalSpacing(top, bottom);
-  }
-
-  Widget? _buildLeading({
-    required BuildContext context,
-    required Line line,
-    required int index,
-    required Map<int, int> indentLevelCounts,
-    required int count,
-  }) {
-    final defaultStyles = QuillStyles.getStyles(context, false)!;
-    final fontSize = defaultStyles.paragraph?.style.fontSize ?? 16;
-    final attrs = line.style.attributes;
-    final numberPointWidthBuilder =
-        defaultStyles.lists?.numberPointWidthBuilder ??
-            TextBlockUtils.defaultNumberPointWidthBuilder;
-
-    // Of the color button
-    final fontColor =
-        line.toDelta().operations.first.attributes?[Attribute.color.key] != null
-            ? hexToColor(
-                line
-                    .toDelta()
-                    .operations
-                    .first
-                    .attributes?[Attribute.color.key],
-              )
-            : null;
-
-    // Of the size button
-    final size =
-        line.toDelta().operations.first.attributes?[Attribute.size.key] != null
-            ? getFontSizeAsDouble(
-                line.toDelta().operations.first.attributes?[Attribute.size.key],
-                defaultStyles: defaultStyles,
-              )
-            : null;
-
-    // Of the alignment buttons
-    // final textAlign = line.style.attributes[Attribute.align.key]?.value != null
-    //     ? getTextAlign(line.style.attributes[Attribute.align.key]?.value)
-    //     : null;
-    final attribute =
-        attrs[Attribute.list.key] ?? attrs[Attribute.codeBlock.key];
-    final isUnordered = attribute == Attribute.ul;
-    final isOrdered = attribute == Attribute.ol;
-    final isCheck =
-        attribute == Attribute.checked || attribute == Attribute.unchecked;
-    final isCodeBlock = attrs.containsKey(Attribute.codeBlock.key);
-    if (attribute == null) return null;
-    final leadingConfig = LeadingConfig(
-      attribute: attribute,
-      attrs: attrs,
-      indentLevelCounts: indentLevelCounts,
-      index: isOrdered || isCodeBlock ? index : null,
-      count: count,
-      enabled: !isCheck
-          ? null
-          : !(widget.config.checkBoxReadOnly ?? controller.readOnly),
-      style: () {
-        if (isOrdered) {
-          return defaultStyles.leading!.style.copyWith(
-            fontSize: size,
-            color: fontColor,
-          );
-        }
-        if (isUnordered) {
-          return defaultStyles.leading!.style.copyWith(
-            fontWeight: FontWeight.bold,
-            fontSize: size,
-            color: fontColor,
-          );
-        }
-        if (isCheck) {
-          return null;
-        }
-        return defaultStyles.code!.style.copyWith(
-          color: defaultStyles.code!.style.color!.withValues(alpha: 0.4),
-        );
-      }(),
-      width: () {
-        if (isOrdered || isCodeBlock) {
-          return numberPointWidthBuilder(fontSize, count);
-        }
-        if (isUnordered) {
-          return numberPointWidthBuilder(fontSize, 1); // same as fontSize * 2
-        }
-        return null;
-      }(),
-      padding: () {
-        if (isOrdered || isUnordered) {
-          return fontSize / 2;
-        }
-        if (isCodeBlock) {
-          return fontSize;
-        }
-        return null;
-      }(),
-      lineSize: isCheck ? fontSize : null,
-      uiBuilder: isCheck ? defaultStyles.lists?.checkboxUIBuilder : null,
-      value: attribute == Attribute.checked,
-      onCheckboxTap: !isCheck
-          ? (value) {}
-          : (value) => _handleCheckboxTap(line.documentOffset, value),
-    );
-    if (widget.config.customLeadingBuilder != null) {
-      final leadingBlockNodeBuilder = widget.config.customLeadingBuilder?.call(
-        line,
-        leadingConfig,
-      );
-      if (leadingBlockNodeBuilder != null) {
-        return leadingBlockNodeBuilder;
-      }
-    }
-
-    if (isOrdered) {
-      return numberPointLeading(leadingConfig);
-    }
-
-    if (isUnordered) {
-      return bulletPointLeading(leadingConfig);
-    }
-
-    if (isCheck) {
-      return checkboxLeading(leadingConfig);
-    }
-    if (isCodeBlock) {
-      return codeBlockLineNumberLeading(leadingConfig);
-    }
-    return null;
   }
 
   HorizontalSpacing _getHorizontalSpacingForLine(
@@ -986,36 +759,34 @@ class QuillRawEditorState extends EditorState
     return defaultStyles!.paragraph!.verticalSpacing;
   }
 
-  HorizontalSpacing _getHorizontalSpacingForBlock(
-      Block node, DefaultStyles? defaultStyles) {
+  HorizontalSpacing _getHorizontalSpacingForBlock(Block node) {
     final attrs = node.style.attributes;
     if (attrs.containsKey(Attribute.blockQuote.key)) {
-      return defaultStyles!.quote!.horizontalSpacing;
+      return _styles!.quote!.horizontalSpacing;
     } else if (attrs.containsKey(Attribute.codeBlock.key)) {
-      return defaultStyles!.code!.horizontalSpacing;
+      return _styles!.code!.horizontalSpacing;
     } else if (attrs.containsKey(Attribute.indent.key)) {
-      return defaultStyles!.indent!.horizontalSpacing;
+      return _styles!.indent!.horizontalSpacing;
     } else if (attrs.containsKey(Attribute.list.key)) {
-      return defaultStyles!.lists!.horizontalSpacing;
+      return _styles!.lists!.horizontalSpacing;
     } else if (attrs.containsKey(Attribute.align.key)) {
-      return defaultStyles!.align!.horizontalSpacing;
+      return _styles!.align!.horizontalSpacing;
     }
     return HorizontalSpacing.zero;
   }
 
-  VerticalSpacing _getVerticalSpacingForBlock(
-      Block node, DefaultStyles? defaultStyles) {
+  VerticalSpacing _getVerticalSpacingForBlock(Block node) {
     final attrs = node.style.attributes;
     if (attrs.containsKey(Attribute.blockQuote.key)) {
-      return defaultStyles!.quote!.verticalSpacing;
+      return _styles!.quote!.verticalSpacing;
     } else if (attrs.containsKey(Attribute.codeBlock.key)) {
-      return defaultStyles!.code!.verticalSpacing;
+      return _styles!.code!.verticalSpacing;
     } else if (attrs.containsKey(Attribute.indent.key)) {
-      return defaultStyles!.indent!.verticalSpacing;
+      return _styles!.indent!.verticalSpacing;
     } else if (attrs.containsKey(Attribute.list.key)) {
-      return defaultStyles!.lists!.verticalSpacing;
+      return _styles!.lists!.verticalSpacing;
     } else if (attrs.containsKey(Attribute.align.key)) {
-      return defaultStyles!.align!.verticalSpacing;
+      return _styles!.align!.verticalSpacing;
     }
     return VerticalSpacing.zero;
   }
@@ -1027,9 +798,6 @@ class QuillRawEditorState extends EditorState
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      //debugDumpApp();
-    });
 
     _shortcutActionsManager = EditorKeyboardShortcutsActionsManager(
       rawEditorState: this,
@@ -1086,6 +854,17 @@ class QuillRawEditorState extends EditorState
 
     // Focus
     widget.config.focusNode.addListener(_handleFocusChanged);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final parentStyles = QuillStyles.getStyles(context, true);
+      final defaultStyles = DefaultStyles.getInstance(context);
+      _styles = (parentStyles != null)
+          ? defaultStyles.merge(parentStyles)
+          : defaultStyles;
+
+      if (widget.config.customStyles != null) {
+        _styles = _styles!.merge(widget.config.customStyles!);
+      }
+    });
   }
 
   // KeyboardVisibilityController only checks for keyboards that

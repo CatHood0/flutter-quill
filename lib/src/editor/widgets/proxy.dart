@@ -32,6 +32,7 @@ class BaselineProxy extends SingleChildRenderObjectWidget {
   }
 }
 
+// why this is used?
 class RenderBaselineProxy extends RenderProxyBox {
   RenderBaselineProxy(
     RenderParagraph? super.child,

@@ -41,6 +41,17 @@ class SelectableNodeWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final selectable = ListenableBuilder(
+        listenable: container,
+        builder: (context, value) {
+          return SelectionAreaForNodeWidget(
+            selection: selection,
+            cursorCont: cursorCont,
+            hasFocus: hasFocus,
+            delegate: delegate,
+            container: container,
+          );
+        });
     return Stack(
       clipBehavior: Clip.none,
       // In RTL mode, if the alignment is topStart,
@@ -50,25 +61,12 @@ class SelectableNodeWidget extends StatelessWidget {
           : AlignmentDirectional.topEnd,
       children: [
         //TODO: at this way we can add remote cursors
-        if (cursorCont.style.paintAboveText)
-          // block selection or selection area
-          SelectionAreaForNodeWidget(
-            selection: selection,
-            cursorCont: cursorCont,
-            hasFocus: hasFocus,
-            delegate: delegate,
-            container: container,
-          ),
+        if (cursorCont.style.paintAboveText) selectable,
+        // block selection or selection area
         child,
         if (!cursorCont.style.paintAboveText)
           // block selection or selection area
-          SelectionAreaForNodeWidget(
-            selection: selection,
-            cursorCont: cursorCont,
-            hasFocus: hasFocus,
-            delegate: delegate,
-            container: container,
-          ),
+          selectable
       ],
     );
   }

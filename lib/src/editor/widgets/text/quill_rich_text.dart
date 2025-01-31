@@ -35,7 +35,6 @@ class QuillRichText extends StatefulWidget {
     required this.hasFocus,
     required this.horizontalSpacing,
     required this.verticalSpacing,
-    required this.delegate,
     this.scrollBottomInset = 0.0,
     this.textDirection,
     this.customStyleBuilder,
@@ -43,9 +42,7 @@ class QuillRichText extends StatefulWidget {
     this.customLinkPrefixes = const <String>[],
   }) : super(key: key);
 
-  final QuillContainer node;
-  // the parent of this rich text must implement SelectableMixin
-  final SelectableMixin delegate;
+  final Line node;
   final TextDirection? textDirection;
   final EmbedsBuilder embedBuilder;
   final CursorCont cursorCont;
@@ -137,7 +134,7 @@ class _QuillRichTextState extends State<QuillRichText>
 
   InlineSpan _getTextSpanForWholeLine() {
     var lineStyle = _getLineStyle(widget.styles);
-    if (widget.node is Line && (widget.node as Line).hasEmbed) {
+    if (widget.node.hasEmbed) {
       return _buildTextSpan(widget.styles, widget.node.children, lineStyle);
     }
 
@@ -218,11 +215,13 @@ class _QuillRichTextState extends State<QuillRichText>
       nodes = LinkedList<Node>()..add(leaf.QuillText('\u{200B}'));
     }
 
-    final isComposingRangeOutOfLine = !widget.composingRange.isValid ||
-        widget.composingRange.isCollapsed ||
-        (widget.composingRange.start < widget.node.documentOffset ||
-            widget.composingRange.end >
-                widget.node.documentOffset + widget.node.length);
+    final isComposingRangeOutOfLine = isDesktop
+        ? true
+        : !widget.composingRange.isValid ||
+            widget.composingRange.isCollapsed ||
+            (widget.composingRange.start < widget.node.documentOffset ||
+                widget.composingRange.end >
+                    widget.node.documentOffset + widget.node.length);
 
     if (isComposingRangeOutOfLine) {
       final children = nodes
@@ -391,13 +390,17 @@ class _QuillRichTextState extends State<QuillRichText>
     final offset = Offset(0, y);
     final children = <WidgetSpan>[];
     for (final c in text.characters) {
-      children.add(WidgetSpan(
+      children.add(
+        WidgetSpan(
           child: Transform.translate(
-              offset: offset,
-              child: Text(
-                c,
-                style: charStyle,
-              ))));
+            offset: offset,
+            child: Text(
+              c,
+              style: charStyle,
+            ),
+          ),
+        ),
+      );
     }
     //
     if (children.length > 1) {
@@ -732,7 +735,7 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   TextPosition getPositionForOffset(Offset offset) {
-    // parsing the global offset to local, fix weird behavior 
+    // parsing the global offset to local, fix weird behavior
     // in selection actions
     final baseOffset = paragraph?.globalToLocal(offset) ?? Offset.zero;
     return paragraph?.getPositionForOffset(baseOffset) ??
@@ -833,7 +836,7 @@ class _QuillRichTextState extends State<QuillRichText>
   List<TextBox> getBoxes(TextSelection textSelection) {
     final parentData = renderBox!.parentData;
     var parentOffset = Offset.zero;
-    if(parentData is BoxParentData) {
+    if (parentData is BoxParentData) {
       parentOffset = parentData.offset;
     }
     final boxes = getBoxesForSelection(textSelection).map((box) {

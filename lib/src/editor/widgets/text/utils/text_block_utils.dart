@@ -21,7 +21,8 @@ abstract final class TextBlockUtils {
       BuildContext context,
       int count,
       LeadingBlockNumberPointWidth numberPointWidthBuilder) {
-    final defaultStyles = QuillStyles.getStyles(context, false)!;
+    final defaultStyles = QuillStyles.getStyles(context, true) ??
+        DefaultStyles.getInstance(context);
     final fontSize = defaultStyles.paragraph?.style.fontSize ?? 16;
     final attrs = block.style.attributes;
 
