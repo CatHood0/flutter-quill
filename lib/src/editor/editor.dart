@@ -1058,11 +1058,7 @@ class RenderEditor extends RenderEditableContainerBox
 
     // Collapsed selection => caret
     final child = childAtPosition(selection.extent);
-    // if child is null, means that we probably need to re-paint the editor
-    if (child == null) {
-      markNeedsPaint();
-      return null;
-    }
+    if (child == null) return null;
     const kMargin = 8.0;
 
     final caretTop = endpoint.point.dy -

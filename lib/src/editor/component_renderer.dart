@@ -47,43 +47,30 @@ class QuillComponentRenderer extends QuillComponentRendererService {
   final Set<QuillComponentBuilder> _builders = {};
   @override
   void register(QuillComponentBuilder builder) {
-    _cachedNodes.clear();
     _builders.add(builder);
   }
 
   @override
   void registerAll(Iterable<QuillComponentBuilder> builders) {
-    _cachedNodes.clear();
     builders.forEach(register);
   }
 
   @override
   void unRegister(QuillComponentBuilder builder) {
-    _cachedNodes.clear();
     _builders.remove(builder);
   }
-
-  // we use this to cache the nodes widget to avoid unnecessary rebuilds
-  final Map<int, Widget> _cachedNodes = {};
 
   @override
   Widget build(BuildContext buildContext, QuillContainer node,
       QuillComponentContext componentContext) {
-    if (_cachedNodes[node.hashCode] != null) {
-      print('Passing cached node(${node.hashCode})');
-      return _cachedNodes[node.hashCode] as Widget;
-    }
     for (final builder in _builders) {
       if (builder.validate(node)) {
-        print('Validated node with builder type: ${builder.runtimeType}');
-        print('Validated Node: $node');
         final child = QuillComponentContainer(
           node: node,
           builder: (ctx) {
             return builder.build(componentContext);
           },
         );
-        _cachedNodes[node.hashCode] = child;
         return child;
       }
     }

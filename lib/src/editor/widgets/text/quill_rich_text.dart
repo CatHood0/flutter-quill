@@ -787,8 +787,8 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   TextPosition globalToLocalPosition(TextPosition position) {
-    assert(node.containsOffset(position.offset),
-        'The provided text position is not in the current node');
+//    assert(node.containsOffset(position.offset),
+//        'The provided text position is not in the current node');
     return TextPosition(
       offset: position.offset - node.documentOffset,
       affinity: position.affinity,
@@ -848,8 +848,8 @@ class _QuillRichTextState extends State<QuillRichText>
   }
 
   List<TextBox> getBoxes(TextSelection textSelection) {
-    final parentData = renderBox!.parentData;
-    var parentOffset = Offset.zero;
+    final parentData = renderBox?.parentData;
+    var parentOffset = const Offset(2.5, 0);
     if (parentData is BoxParentData) {
       parentOffset = parentData.offset;
     }

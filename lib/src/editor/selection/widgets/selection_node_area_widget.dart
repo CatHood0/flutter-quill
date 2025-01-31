@@ -102,7 +102,6 @@ class _SelectionAreaForNodeWidgetState
   Widget build(BuildContext context) {
     const sizedBox = SizedBox.shrink();
     return ValueListenableBuilder(
-      key: ValueKey(widget.container.key.toString()),
       valueListenable: widget.selection,
       builder: (ctx, value, child) {
         if (!_containsTextSelection(value)) {
@@ -290,13 +289,9 @@ class _SelectionAreaForNodeWidgetState
       }
     }
 
-    if (mounted) {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
       setState(changeSelection);
-    } else {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        changeSelection();
-      });
-    }
+    });
   }
 
   bool get isEmbed =>

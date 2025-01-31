@@ -47,8 +47,8 @@ abstract base class QuillContainer<T extends Node?> extends Node {
   /// Adds [node] to the end of this container children list.
   void add(T node) {
     assert(node?.parent == null);
+    node?.parent = this;
     _children.add(node as Node);
-    node.parent = this;
     clearLengthCache();
   }
 
