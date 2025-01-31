@@ -29,7 +29,6 @@ abstract base class Leaf extends Node {
     _value = v;
     _length = null;
     clearOffsetCache();
-    notify();
   }
 
   Object _value;
@@ -50,7 +49,6 @@ abstract base class Leaf extends Node {
       // return 1 for embedded object
       _length = 1;
     }
-    notify();
     return _length!;
   }
 
@@ -58,8 +56,6 @@ abstract base class Leaf extends Node {
   void clearLengthCache() {
     if (parent != null) {
       parent!.clearLengthCache();
-      parent?.notify();
-      notify();
     }
   }
 
@@ -81,7 +77,6 @@ abstract base class Leaf extends Node {
       insertAfter(node);
     }
     node.format(style);
-    notify();
   }
 
   @override
@@ -97,10 +92,7 @@ abstract base class Leaf extends Node {
     if (remain > 0 && node.next != null) {
       node.next?.retain(0, remain, style);
     }
-    node
-      ..format(style)
-      ..notify();
-    notify();
+    node.format(style);
   }
 
   @override
@@ -122,8 +114,6 @@ abstract base class Leaf extends Node {
     if (prev != null) {
       prev.adjust();
     }
-    parent?.notify();
-    notify();
   }
 
   @override
@@ -152,18 +142,15 @@ abstract base class Leaf extends Node {
     if (!node.isFirst && prev is QuillText && prev.style == node.style) {
       prev.value = prev.value + node.value;
       node.unlink();
-      (node = prev).notify();
+      node = prev;
     }
 
     // Merging it with next node if style is the same.
     final next = node.next;
     if (!node.isLast && next is QuillText && next.style == node.style) {
       node.value = node.value + next.value;
-      next
-        ..unlink()
-        ..notify();
+      next.unlink();
     }
-    notify();
   }
 
   /// Splits this leaf node at [index] and returns new node.
@@ -202,7 +189,6 @@ abstract base class Leaf extends Node {
     assert(index >= 0 && index <= length);
     final cut = splitAt(index);
     cut?.unlink();
-    cut?.notify();
     return cut;
   }
 
