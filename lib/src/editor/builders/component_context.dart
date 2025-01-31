@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../flutter_quill.dart';
+import '../../document/nodes/container.dart';
 import '../widgets/delegate.dart';
 
 class QuillComponentContext {
@@ -12,7 +13,7 @@ class QuillComponentContext {
   });
 
   final BuildContext buildContext;
-  final Node node;
+  final QuillContainer node;
   final Style styles;
 
   /// Represents the indentation levels

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:meta/meta.dart';
 
 import '../../flutter_quill.dart';
+import '../document/nodes/container.dart';
 import 'builders/component_container.dart';
 import 'builders/component_context.dart';
 import 'builders/component_node_builder.dart';
@@ -19,7 +20,7 @@ abstract class QuillComponentRendererService {
   @mustBeOverridden
   Widget build(
     BuildContext buildContext,
-    Node node,
+    QuillContainer node,
     QuillComponentContext componentContext,
   );
 
@@ -32,7 +33,7 @@ abstract class QuillComponentRendererService {
     return nodes
         .map((node) => build(
               buildContext,
-              node,
+              node as QuillContainer,
               componentContext,
             ))
         .toList(growable: false);
@@ -66,7 +67,7 @@ class QuillComponentRenderer extends QuillComponentRendererService {
   final Map<int, Widget> _cachedNodes = {};
 
   @override
-  Widget build(BuildContext buildContext, Node node,
+  Widget build(BuildContext buildContext, QuillContainer node,
       QuillComponentContext componentContext) {
     if (_cachedNodes[node.hashCode] != null) {
       print('Passing cached node(${node.hashCode})');

@@ -581,10 +581,10 @@ class QuillRawEditorState extends EditorState
       result.add(
         widget.config.componentsRenderer.build(
           context,
-          node,
+          node as QuillContainer,
           QuillComponentContext(
             buildContext: context,
-            node: node as QuillContainer,
+            node: node,
             styles: node.style,
             indentLevelCounts: indentLevelCounts,
             extra: QuillWidgetParams(
