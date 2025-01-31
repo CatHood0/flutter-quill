@@ -548,11 +548,11 @@ class RenderEditor extends RenderEditableContainerBox
     // null value, since the state of the SelectableMixin implementation
     // couldn't be unmounted yet
     if (baseChild == null) return [];
-    final baseParentData = baseChild.renderBox!.parentData as BoxParentData;
+    //final baseParentData = baseChild.renderBox!.parentData as BoxParentData;
     final baseSelection = localSelection(baseChild.node, textSelection, true);
     var basePoint = baseChild.getBaseEndpointForSelection(baseSelection);
     basePoint = TextSelectionPoint(
-      basePoint.point + baseParentData.offset,
+      basePoint.point, //+ baseParentData.offset,
       basePoint.direction,
     );
 
@@ -581,13 +581,13 @@ class RenderEditor extends RenderEditableContainerBox
     // couldn't be unmounted yet
     if (extentChild == null) return [basePoint];
 
-    final extentParentData = extentChild.renderBox!.parentData as BoxParentData;
+    //final extentParentData = extentChild.renderBox!.parentData as BoxParentData;
     final extentSelection =
         localSelection(extentChild.node, textSelection, true);
     var extentPoint =
         extentChild.getExtentEndpointForSelection(extentSelection);
     extentPoint = TextSelectionPoint(
-      extentPoint.point + extentParentData.offset,
+      extentPoint.point,// + extentParentData.offset,
       extentPoint.direction,
     );
 
@@ -914,8 +914,7 @@ class RenderEditor extends RenderEditableContainerBox
       container.childCount - 1,
     )?.selectable;
     if (child == null) return const TextPosition(offset: -1);
-    final parentData = child.renderBox!.parentData as BoxParentData;
-    final localOffset = local - parentData.offset;
+    final localOffset = local;
     final localPosition = child.getPositionForOffset(localOffset);
     return TextPosition(
       offset: localPosition.offset + child.node.offset,
@@ -1080,10 +1079,7 @@ class RenderEditor extends RenderEditableContainerBox
     if (targetChild == null) return Rect.zero;
     final localPosition = targetChild.globalToLocalPosition(position);
 
-    final childLocalRect = targetChild.getLocalRectForCaret(localPosition);
-
-    final boxParentData = targetChild.renderBox!.parentData as BoxParentData;
-    return childLocalRect.shift(Offset(0, boxParentData.offset.dy));
+    return targetChild.getLocalRectForCaret(localPosition);
   }
 
   // Start floating cursor

@@ -732,10 +732,10 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   TextPosition getPositionForOffset(Offset offset) {
-    // this could be having issues getting the correct position for offset
-    //TODO: fix it
-    // or see the cursor implementation
-    return paragraph?.getPositionForOffset(offset) ??
+    // parsing the global offset to local, fix weird behavior 
+    // in selection actions
+    final baseOffset = paragraph?.globalToLocal(offset) ?? Offset.zero;
+    return paragraph?.getPositionForOffset(baseOffset) ??
         const TextPosition(
           offset: 0,
         );
@@ -831,8 +831,11 @@ class _QuillRichTextState extends State<QuillRichText>
   }
 
   List<TextBox> getBoxes(TextSelection textSelection) {
-    final parentData = renderBox!.parentData as BoxParentData?;
-    final parentOffset = parentData!.offset;
+    final parentData = renderBox!.parentData;
+    var parentOffset = Offset.zero;
+    if(parentData is BoxParentData) {
+      parentOffset = parentData.offset;
+    }
     final boxes = getBoxesForSelection(textSelection).map((box) {
       return TextBox.fromLTRBD(
         box.left + parentOffset.dx,
