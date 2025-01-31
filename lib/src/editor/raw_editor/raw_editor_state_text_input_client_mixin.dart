@@ -9,7 +9,6 @@ import 'package:flutter/services.dart';
 
 import '../../delta/delta_diff.dart';
 import '../../document/document.dart';
-import '../editor.dart';
 import 'raw_editor.dart';
 
 mixin RawEditorStateTextInputClientMixin on EditorState

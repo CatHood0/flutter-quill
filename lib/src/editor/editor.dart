@@ -3,113 +3,24 @@ import 'dart:math' as math;
 import 'package:flutter/cupertino.dart'
     show CupertinoTheme, cupertinoTextSelectionControls;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:meta/meta.dart';
 
 import '../../flutter_quill.dart';
 import '../common/extensions/node_ext.dart';
 import '../common/utils/platform.dart';
 import '../document/nodes/container.dart' as container_node;
 import 'builders/standard_builders/standard_builders.dart';
+import 'editor_selection_service.dart';
+import 'gestures/quill_gesture_detector.dart';
+import 'render_container_editor.dart';
 import 'selection/selectable_mixin.dart';
 import 'widgets/box.dart';
 import 'widgets/delegate.dart';
 import 'widgets/float_cursor.dart';
 import 'widgets/text/text_selection.dart';
-
-/// Base interface for editable render objects.
-abstract class RenderAbstractEditor implements TextLayoutMetrics {
-  TextSelection selectWordAtPosition(TextPosition position);
-
-  TextSelection selectLineAtPosition(TextPosition position);
-
-  /// Returns preferred line height at specified `position` in text.
-  double preferredLineHeight(TextPosition position);
-
-  /// Returns [Rect] for caret in local coordinates
-  ///
-  /// Useful to enforce visibility of full caret at given position
-  Rect getLocalRectForCaret(TextPosition position);
-
-  /// Returns the local coordinates of the endpoints of the given selection.
-  ///
-  /// If the selection is collapsed (and therefore occupies a single point), the
-  /// returned list is of length one. Otherwise, the selection is not collapsed
-  /// and the returned list is of length two. In this case, however, the two
-  /// points might actually be co-located (e.g., because of a bidirectional
-  /// selection that contains some text but whose ends meet in the middle).
-  TextPosition getPositionForOffset(Offset offset);
-
-  /// Returns the local coordinates of the endpoints of the given selection.
-  ///
-  /// If the selection is collapsed (and therefore occupies a single point), the
-  /// returned list is of length one. Otherwise, the selection is not collapsed
-  /// and the returned list is of length two. In this case, however, the two
-  /// points might actually be co-located (e.g., because of a bidirectional
-  /// selection that contains some text but whose ends meet in the middle).
-  List<TextSelectionPoint> getEndpointsForSelection(
-      TextSelection textSelection);
-
-  /// Sets the screen position of the floating cursor and the text position
-  /// closest to the cursor.
-  /// `resetLerpValue` drives the size of the floating cursor.
-  /// See [EditorState.floatingCursorResetController].
-  void setFloatingCursor(FloatingCursorDragState dragState,
-      Offset lastBoundedOffset, TextPosition lastTextPosition,
-      {double? resetLerpValue});
-
-  /// If [ignorePointer] is false (the default) then this method is called by
-  /// the internal gesture recognizer's [TapGestureRecognizer.onTapDown]
-  /// callback.
-  ///
-  /// When [ignorePointer] is true, an ancestor widget must respond to tap
-  /// down events by calling this method.
-  void handleTapDown(TapDownDetails details);
-
-  /// Selects the set words of a paragraph in a given range of global positions.
-  ///
-  /// The first and last endpoints of the selection will always be at the
-  /// beginning and end of a word respectively.
-  ///
-  /// {@macro flutter.rendering.editable.select}
-  void selectWordsInRange(
-    Offset from,
-    Offset to,
-    SelectionChangedCause cause,
-  );
-
-  /// Move the selection to the beginning or end of a word.
-  ///
-  /// {@macro flutter.rendering.editable.select}
-  void selectWordEdge(SelectionChangedCause cause);
-
-  ///
-  /// Returns the new selection. Note that the returned value may not be
-  /// yet reflected in the latest widget state.
-  ///
-  /// Returns null if no change occurred.
-  TextSelection? selectPositionAt(
-      {required Offset from, required SelectionChangedCause cause, Offset? to});
-
-  /// Select a word around the location of the last tap down.
-  ///
-  /// {@macro flutter.rendering.editable.select}
-  void selectWord(SelectionChangedCause cause);
-
-  /// Move selection to the location of the last tap down.
-  ///
-  /// {@template flutter.rendering.editable.select}
-  /// This method is mainly used to translate user inputs in global positions
-  /// into a [TextSelection]. When used in conjunction with a [EditableText],
-  /// the selection change is fed back into [TextEditingController.selection].
-  ///
-  /// If you have a [TextEditingController], it's generally easier to
-  /// programmatically manipulate its `value` or `selection` directly.
-  /// {@endtemplate}
-  void selectPosition({required SelectionChangedCause cause});
-}
 
 class QuillEditor extends StatefulWidget {
   /// Quick start guide:
@@ -193,7 +104,7 @@ class QuillEditorState extends State<QuillEditor>
     super.initState();
     _editorKey = configurations.editorKey ?? GlobalKey<EditorState>();
     _selectionGestureDetectorBuilder =
-        _QuillEditorSelectionGestureDetectorBuilder(
+        QuillEditorSelectionGestureDetectorBuilder(
       this,
       configurations.detectWordBoundary,
     );
@@ -254,9 +165,9 @@ class QuillEditorState extends State<QuillEditor>
       controller: controller,
       config: QuillRawEditorConfig(
         characterShortcutEvents: widget.config.characterShortcutEvents,
+        builders: widget.config.builders ?? [...standardsBuilders],
         spaceShortcutEvents: widget.config.spaceShortcutEvents,
         onKeyPressed: widget.config.onKeyPressed,
-        builders: widget.config.builders ?? [...standardsBuilders],
         customLeadingBuilder: widget.config.customLeadingBlockBuilder,
         focusNode: widget.focusNode,
         scrollController: widget.scrollController,
@@ -390,210 +301,9 @@ class QuillEditorState extends State<QuillEditor>
     return currentState;
   }
 
-  void _requestKeyboard() {
+  @internal
+  void requestKeyboard() {
     _requireEditorCurrentState.requestKeyboard();
-  }
-}
-
-class _QuillEditorSelectionGestureDetectorBuilder
-    extends EditorTextSelectionGestureDetectorBuilder {
-  _QuillEditorSelectionGestureDetectorBuilder(
-      this._state, this._detectWordBoundary)
-      : super(delegate: _state, detectWordBoundary: _detectWordBoundary);
-
-  final QuillEditorState _state;
-  final bool _detectWordBoundary;
-
-  @override
-  void onForcePressStart(ForcePressDetails details) {
-    super.onForcePressStart(details);
-    if (delegate.selectionEnabled && shouldShowSelectionToolbar) {
-      editor!.showToolbar();
-    }
-  }
-
-  @override
-  void onForcePressEnd(ForcePressDetails details) {}
-
-  @override
-  void onSingleLongTapMoveUpdate(LongPressMoveUpdateDetails details) {
-    if (_state.configurations.onSingleLongTapMoveUpdate != null) {
-      if (renderEditor != null &&
-          _state.configurations.onSingleLongTapMoveUpdate!(
-            details,
-            renderEditor!.getPositionForOffset,
-          )) {
-        return;
-      }
-    }
-    if (!delegate.selectionEnabled) {
-      return;
-    }
-
-    if (Theme.of(_state.context).isCupertino) {
-      renderEditor!.selectPositionAt(
-        from: details.globalPosition,
-        cause: SelectionChangedCause.longPress,
-      );
-    } else {
-      renderEditor!.selectWordsInRange(
-        details.globalPosition - details.offsetFromOrigin,
-        details.globalPosition,
-        SelectionChangedCause.longPress,
-      );
-    }
-  }
-
-  bool _isPositionSelected(TapUpDetails details) {
-    if (_state.controller.document.isEmpty()) {
-      return false;
-    }
-    final pos = renderEditor!.getPositionForOffset(details.globalPosition);
-    final result =
-        editor!.widget.controller.document.querySegmentLeafNode(pos.offset);
-    final line = result.line;
-    if (line == null) {
-      return false;
-    }
-    final segmentLeaf = result.leaf;
-    if (segmentLeaf == null && line.length == 1) {
-      editor!.widget.controller.updateSelection(
-        TextSelection.collapsed(offset: pos.offset),
-        ChangeSource.local,
-      );
-      return true;
-    }
-    return false;
-  }
-
-  @override
-  void onTapDown(TapDownDetails details) {
-    if (_state.configurations.onTapDown != null) {
-      if (renderEditor != null &&
-          _state.configurations.onTapDown!(
-            details,
-            renderEditor!.getPositionForOffset,
-          )) {
-        return;
-      }
-    }
-    super.onTapDown(details);
-  }
-
-  bool isShiftClick(PointerDeviceKind deviceKind) {
-    final pressed = HardwareKeyboard.instance.logicalKeysPressed;
-    return deviceKind == PointerDeviceKind.mouse &&
-        (pressed.contains(LogicalKeyboardKey.shiftLeft) ||
-            pressed.contains(LogicalKeyboardKey.shiftRight));
-  }
-
-  @override
-  void onSingleTapUp(TapUpDetails details) {
-    if (_state.configurations.onTapUp != null &&
-        renderEditor != null &&
-        _state.configurations.onTapUp!(
-          details,
-          renderEditor!.getPositionForOffset,
-        )) {
-      return;
-    }
-
-    editor!.hideToolbar();
-
-    try {
-      if (delegate.selectionEnabled && !_isPositionSelected(details)) {
-        if (isAppleOS || isDesktop) {
-          // added isDesktop() to enable extend selection in Windows platform
-          switch (details.kind) {
-            case PointerDeviceKind.mouse:
-            case PointerDeviceKind.stylus:
-            case PointerDeviceKind.invertedStylus:
-              // Precise devices should place the cursor at a precise position.
-              // If `Shift` key is pressed then
-              // extend current selection instead.
-              if (isShiftClick(details.kind)) {
-                renderEditor!
-                  ..extendSelection(details.globalPosition,
-                      cause: SelectionChangedCause.tap)
-                  ..onSelectionCompleted();
-              } else {
-                renderEditor!
-                  ..selectPosition(cause: SelectionChangedCause.tap)
-                  ..onSelectionCompleted();
-              }
-
-              break;
-            case PointerDeviceKind.touch:
-            case PointerDeviceKind.unknown:
-              // On macOS/iOS/iPadOS a touch tap places the cursor at the edge
-              // of the word.
-              if (_detectWordBoundary) {
-                renderEditor!
-                  ..selectWordEdge(SelectionChangedCause.tap)
-                  ..onSelectionCompleted();
-              } else {
-                renderEditor!
-                  ..selectPosition(cause: SelectionChangedCause.tap)
-                  ..onSelectionCompleted();
-              }
-              break;
-            case PointerDeviceKind.trackpad:
-              // TODO: Handle this case.
-              break;
-          }
-        } else {
-          renderEditor!
-            ..selectPosition(cause: SelectionChangedCause.tap)
-            ..onSelectionCompleted();
-        }
-      }
-    } finally {
-      _state._requestKeyboard();
-    }
-  }
-
-  @override
-  void onSingleLongTapStart(LongPressStartDetails details) {
-    if (_state.configurations.onSingleLongTapStart != null) {
-      if (renderEditor != null &&
-          _state.configurations.onSingleLongTapStart!(
-            details,
-            renderEditor!.getPositionForOffset,
-          )) {
-        return;
-      }
-    }
-
-    if (delegate.selectionEnabled) {
-      if (Theme.of(_state.context).isCupertino) {
-        renderEditor!.selectPositionAt(
-          from: details.globalPosition,
-          cause: SelectionChangedCause.longPress,
-        );
-      } else {
-        renderEditor!.selectWord(SelectionChangedCause.longPress);
-        Feedback.forLongPress(_state.context);
-      }
-    }
-  }
-
-  @override
-  void onSingleLongTapEnd(LongPressEndDetails details) {
-    if (_state.configurations.onSingleLongTapEnd != null) {
-      if (renderEditor != null) {
-        if (_state.configurations.onSingleLongTapEnd!(
-          details,
-          renderEditor!.getPositionForOffset,
-        )) {
-          return;
-        }
-
-        if (delegate.selectionEnabled) {
-          renderEditor!.onSelectionCompleted();
-        }
-      }
-    }
-    super.onSingleLongTapEnd(details);
   }
 }
 
@@ -630,7 +340,7 @@ const EdgeInsets _kFloatingCaretSizeIncrease =
 /// Children of [RenderEditor] must be instances of [RenderEditableBox].
 class RenderEditor extends RenderEditableContainerBox
     with RelayoutWhenSystemFontsChangeMixin
-    implements RenderAbstractEditor {
+    implements QuillEditorSelectionService {
   RenderEditor({
     required this.document,
     required super.textDirection,
@@ -687,6 +397,7 @@ class RenderEditor extends RenderEditableContainerBox
     final startPosition =
         TextPosition(offset: selection.start, affinity: selection.affinity);
     final startOffset = _getOffsetForCaret(startPosition);
+    if (startOffset.dx == 0 && startOffset.dy == 0) return;
     // TODO(justinmc): https://github.com/flutter/flutter/issues/31495
     // Check if the selection is visible with an approximation because a
     // difference between rounded and unrounded values causes the caret to be
@@ -711,6 +422,7 @@ class RenderEditor extends RenderEditableContainerBox
   // given a global TextPosition
   Offset _getOffsetForCaret(TextPosition position) {
     final child = childAtPosition(position);
+    if (child == null) return Offset.zero;
     final childPosition = child.globalToLocalPosition(position);
     final localOffsetForCaret =
         child.getOffsetForCaretByPosition(childPosition);
@@ -803,6 +515,7 @@ class RenderEditor extends RenderEditableContainerBox
       TextSelection textSelection) {
     if (textSelection.isCollapsed) {
       final child = childAtPosition(textSelection.extent);
+      if (child == null) return [];
       final localPosition = TextPosition(
         offset: textSelection.extentOffset - child.node.offset,
         affinity: textSelection.affinity,
@@ -820,7 +533,7 @@ class RenderEditor extends RenderEditableContainerBox
       ];
     }
 
-    final baseNode = _container.queryChild(textSelection.start, false).node;
+    final baseNode = container.queryChild(textSelection.start, false).node;
 
     SelectableMixin? baseChild;
     var baseChildIndex = 0;
@@ -830,10 +543,12 @@ class RenderEditor extends RenderEditableContainerBox
       }
       baseChildIndex++;
     }
-    assert(baseChild != null,
-        'node in selection(start: ${textSelection.baseOffset}, end: ${textSelection.extentOffset}) was not founded.');
 
-    final baseParentData = baseChild!.renderBox!.parentData as BoxParentData;
+    // we return a empty list, because SelectableMixin can be completely
+    // null value, since the state of the SelectableMixin implementation
+    // couldn't be unmounted yet
+    if (baseChild == null) return [];
+    final baseParentData = baseChild.renderBox!.parentData as BoxParentData;
     final baseSelection = localSelection(baseChild.node, textSelection, true);
     var basePoint = baseChild.getBaseEndpointForSelection(baseSelection);
     basePoint = TextSelectionPoint(
@@ -841,7 +556,7 @@ class RenderEditor extends RenderEditableContainerBox
       basePoint.direction,
     );
 
-    final extentNode = _container.queryChild(textSelection.end, false).node;
+    final extentNode = container.queryChild(textSelection.end, false).node;
     SelectableMixin? extentChild = baseChild;
 
     /// Trap shortening the text of a link which can cause selection to extend off end of line
@@ -861,10 +576,12 @@ class RenderEditor extends RenderEditableContainerBox
         }
       }
     }
-    assert(extentChild != null);
+    // we return a empty list, because SelectableMixin can be completely
+    // null value, since the state of the SelectableMixin implementation
+    // couldn't be unmounted yet
+    if (extentChild == null) return [basePoint];
 
-    final extentParentData =
-        extentChild!.renderBox!.parentData as BoxParentData;
+    final extentParentData = extentChild.renderBox!.parentData as BoxParentData;
     final extentSelection =
         localSelection(extentChild.node, textSelection, true);
     var extentPoint =
@@ -916,7 +633,9 @@ class RenderEditor extends RenderEditableContainerBox
     SelectionChangedCause cause,
   ) {
     final firstPosition = getPositionForOffset(from);
+    if (firstPosition.offset <= -1) return;
     final firstWord = selectWordAtPosition(firstPosition);
+    if (firstWord.start <= -1 && firstWord.end <= -1) return;
     final lastWord =
         to == null ? firstWord : selectWordAtPosition(getPositionForOffset(to));
 
@@ -951,6 +670,7 @@ class RenderEditor extends RenderEditableContainerBox
     /// we do not allow swapping of base and extent positions.
     assert(_extendSelectionOrigin != null);
     final position = getPositionForOffset(to);
+    if (position.offset <= -1) return;
     if (position.offset < _extendSelectionOrigin!.baseOffset) {
       _handleSelectionChange(
         TextSelection(
@@ -976,13 +696,16 @@ class RenderEditor extends RenderEditableContainerBox
   void selectWordEdge(SelectionChangedCause cause) {
     assert(_lastTapDownPosition != null);
     final position = getPositionForOffset(_lastTapDownPosition!);
+    if (position.offset <= -1) return;
     final child = childAtPosition(position);
+    if (child == null) return;
     final nodeOffset = child.node.offset;
     final localPosition = TextPosition(
       offset: position.offset - nodeOffset,
       affinity: position.affinity,
     );
     final localWord = child.getWordBoundary(localPosition);
+    if (localWord.start <= -1 || localWord.end <= -1) return;
     final word = TextRange(
       start: localWord.start + nodeOffset,
       end: localWord.end + nodeOffset,
@@ -1014,11 +737,12 @@ class RenderEditor extends RenderEditableContainerBox
     Offset? to,
   }) {
     final fromPosition = getPositionForOffset(from);
+    if (fromPosition.offset <= -1) return null;
     final toPosition = to == null ? null : getPositionForOffset(to);
 
     var baseOffset = fromPosition.offset;
     var extentOffset = fromPosition.offset;
-    if (toPosition != null) {
+    if (toPosition != null && toPosition.offset >= 0) {
       baseOffset = math.min(fromPosition.offset, toPosition.offset);
       extentOffset = math.max(fromPosition.offset, toPosition.offset);
     }
@@ -1046,7 +770,10 @@ class RenderEditor extends RenderEditableContainerBox
 
   @override
   TextSelection selectWordAtPosition(TextPosition position) {
+    if (position.offset <= -1) return const TextSelection.collapsed(offset: -1);
     final word = getWordBoundary(position);
+    if (word.start <= -1 && word.end <= -1)
+      return const TextSelection.collapsed(offset: -1);
     // When long-pressing past the end of the text, we want a collapsed cursor.
     if (position.offset >= word.end) {
       return TextSelection.fromPosition(position);
@@ -1172,6 +899,7 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   double preferredLineHeight(TextPosition position) {
     final child = childAtPosition(position);
+    if (child == null) return 0;
     return child.preferredLineHeightByPosition(
         TextPosition(offset: position.offset - child.node.offset));
   }
@@ -1179,8 +907,13 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   TextPosition getPositionForOffset(Offset offset) {
     final local = globalToLocal(offset);
-    final child = childAtOffset(local);
-
+    final child = getNodeInOffset(
+      document.root.children.toList(),
+      offset,
+      0,
+      container.childCount - 1,
+    )?.selectable;
+    if (child == null) return const TextPosition(offset: -1);
     final parentData = child.renderBox!.parentData as BoxParentData;
     final localOffset = local - parentData.offset;
     final localPosition = child.getPositionForOffset(localOffset);
@@ -1188,6 +921,90 @@ class RenderEditor extends RenderEditableContainerBox
       offset: localPosition.offset + child.node.offset,
       affinity: localPosition.affinity,
     );
+  }
+
+  Node? getNodeInOffset(
+    List<Node> sortedNodes,
+    Offset offset,
+    int start,
+    int end, [
+    bool? after,
+  ]) {
+    if (start < 0 && end >= sortedNodes.length) {
+      return null;
+    }
+
+    var min = _findCloseNode(
+      sortedNodes,
+      start,
+      end,
+      (rect) => rect.bottom <= offset.dy,
+    );
+
+    final filteredNodes = List.of(sortedNodes)
+      ..retainWhere(
+        (n) => n.rect.bottom == sortedNodes[min].rect.bottom,
+      );
+    min = 0;
+    if (filteredNodes.length > 1) {
+      min = _findCloseNode(
+        sortedNodes,
+        0,
+        filteredNodes.length - 1,
+        (rect) => rect.right <= offset.dx,
+      );
+    }
+
+    final node = filteredNodes[min];
+    if (node is Leaf && node.rect.top <= offset.dy) {
+      return node;
+    } else if (node is container_node.QuillContainer) {
+      if (node.children.isNotEmpty &&
+          node.children.first.renderBox != null &&
+          node.children.first.rect.top <= offset.dy) {
+        final children = node.children.toList(growable: false)
+          ..sort(
+            (a, b) => a.rect.bottom != b.rect.bottom
+                ? a.rect.bottom.compareTo(b.rect.bottom)
+                : a.rect.left.compareTo(b.rect.left),
+          );
+
+        return getNodeInOffset(
+          children,
+          offset,
+          0,
+          children.length - 1,
+        );
+      }
+    }
+    if (min > 0 && after != null) {
+      if (after) {
+        return sortedNodes[min + 1];
+      } else {
+        return sortedNodes[min - 1];
+      }
+    }
+    return node;
+  }
+
+  int _findCloseNode(
+    List<Node> sortedNodes,
+    int start,
+    int end,
+    bool Function(Rect rect) compare,
+  ) {
+    var min = start;
+    var max = end;
+    while (min <= max) {
+      final mid = min + ((max - min) >> 1);
+      final rect = sortedNodes[mid].rect;
+      if (compare(rect)) {
+        min = mid + 1;
+      } else {
+        max = mid - 1;
+      }
+    }
+    return min.clamp(start, end);
   }
 
   /// Returns the y-offset of the editor at which [selection] is visible.
@@ -1215,6 +1032,7 @@ class RenderEditor extends RenderEditableContainerBox
     // adjust the dy value by the height of the line. We also add a small margin
     // so that the caret is not too close to the edge of the viewport.
     final endpoints = getEndpointsForSelection(selection);
+    if (endpoints.isEmpty) return null;
 
     // when we drag the right handle, we should get the last point
     TextSelectionPoint endpoint;
@@ -1232,6 +1050,7 @@ class RenderEditor extends RenderEditableContainerBox
 
     // Collapsed selection => caret
     final child = childAtPosition(selection.extent);
+    if (child == null) return null;
     const kMargin = 8.0;
 
     final caretTop = endpoint.point.dy -
@@ -1258,6 +1077,7 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   Rect getLocalRectForCaret(TextPosition position) {
     final targetChild = childAtPosition(position);
+    if (targetChild == null) return Rect.zero;
     final localPosition = targetChild.globalToLocalPosition(position);
 
     final childLocalRect = targetChild.getLocalRectForCaret(localPosition);
@@ -1372,6 +1192,10 @@ class RenderEditor extends RenderEditableContainerBox
               _kFloatingCaretSizeIncrease, EdgeInsets.zero, resetLerpValue)!
           : _kFloatingCaretSizeIncrease;
       final child = childAtPosition(textPosition);
+      if (child == null) {
+        markNeedsPaint();
+        return;
+      }
       final caretPrototype =
           child.getCaretPrototype(child.globalToLocalPosition(textPosition));
       _floatingCursorRect =
@@ -1397,6 +1221,7 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   TextSelection getLineAtOffset(TextPosition position) {
     final child = childAtPosition(position);
+    if (child == null) return const TextSelection.collapsed(offset: 0);
     final nodeOffset = child.node.offset;
     final localPosition = TextPosition(
         offset: position.offset - nodeOffset, affinity: position.affinity);
@@ -1411,6 +1236,7 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   TextRange getWordBoundary(TextPosition position) {
     final child = childAtPosition(position);
+    if (child == null) return const TextRange.collapsed(-1);
     final nodeOffset = child.node.offset;
     final localPosition = TextPosition(
         offset: position.offset - nodeOffset, affinity: position.affinity);
@@ -1424,8 +1250,12 @@ class RenderEditor extends RenderEditableContainerBox
   /// Returns the TextPosition after moving by the vertical offset.
   TextPosition getTextPositionMoveVertical(
       TextPosition position, double verticalOffset) {
-    final caretOfs = localToGlobal(_getOffsetForCaret(position));
-    return getPositionForOffset(caretOfs.translate(0, verticalOffset));
+    final offset = _getOffsetForCaret(position);
+    if (offset.dx == 0 && offset.dy == 0) return const TextPosition(offset: 0);
+    final caretOfs = localToGlobal(offset);
+    final newPos = getPositionForOffset(caretOfs.translate(0, verticalOffset));
+    if (newPos.offset <= -1) return const TextPosition(offset: 0);
+    return newPos;
   }
 
   /// Returns the TextPosition above the given offset into the text.
@@ -1435,6 +1265,7 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   TextPosition getTextPositionAbove(TextPosition position) {
     final child = childAtPosition(position);
+    if (child == null) return const TextPosition(offset: -1);
     final localPosition =
         TextPosition(offset: position.offset - child.node.documentOffset);
 
@@ -1443,7 +1274,7 @@ class RenderEditor extends RenderEditableContainerBox
     if (newPosition == null) {
       // There was no text above in the current child, check the direct
       // sibling.
-      final sibling = childBefore(child.renderBox!);
+      final sibling = childBeforeNode(child.node);
       if (sibling == null) {
         // reached beginning of the document, move to the
         // first character
@@ -1451,13 +1282,13 @@ class RenderEditor extends RenderEditableContainerBox
       } else {
         SelectableMixin? sibling2;
         for (final node in container.children) {
-          if (node.renderBox! == sibling) {
+          if (node.renderBox! == sibling.renderBox) {
             sibling2 = node.selectable;
           }
         }
-        assert(sibling2 != null);
+        if (sibling2 == null) return TextPosition(offset: document.length - 1);
         final caretOffset = child.getOffsetForCaretByPosition(localPosition);
-        final testPosition = TextPosition(offset: sibling2!.node.length - 1);
+        final testPosition = TextPosition(offset: sibling2.node.length - 1);
         final testOffset = sibling2.getOffsetForCaretByPosition(testPosition);
         final finalOffset = Offset(caretOffset.dx, testOffset.dy);
         final siblingPosition = sibling2.getPositionForOffset(finalOffset);
@@ -1478,6 +1309,7 @@ class RenderEditor extends RenderEditableContainerBox
   @override
   TextPosition getTextPositionBelow(TextPosition position) {
     final child = childAtPosition(position);
+    if (child == null) return const TextPosition(offset: -1);
     final localPosition = TextPosition(
       offset: position.offset - child.node.documentOffset,
     );
@@ -1486,7 +1318,7 @@ class RenderEditor extends RenderEditableContainerBox
 
     if (newPosition == null) {
       // There was no text below in the current child, check the direct sibling.
-      final sibling = childAfter(child.renderBox!);
+      final sibling = childAfterNode(child.node);
       if (sibling == null) {
         // reached end of the document, move to the
         // last character
@@ -1495,14 +1327,14 @@ class RenderEditor extends RenderEditableContainerBox
         SelectableMixin? sibling2;
         for (var index = container.children.length - 1; index >= 0; index--) {
           final node = container.children.elementAt(index);
-          if (node.renderBox! == sibling) {
+          if (node.renderBox! == sibling.renderBox) {
             sibling2 = node.selectable;
           }
         }
-        assert(sibling2 != null);
+        if (sibling2 == null) return TextPosition(offset: document.length - 1);
         final caretOffset = child.getOffsetForCaretByPosition(localPosition);
         const testPosition = TextPosition(offset: 0);
-        final testOffset = sibling2!.getOffsetForCaretByPosition(testPosition);
+        final testOffset = sibling2.getOffsetForCaretByPosition(testPosition);
         final finalOffset = Offset(caretOffset.dx, testOffset.dy);
         final siblingPosition = sibling2.getPositionForOffset(finalOffset);
         newPosition = TextPosition(
@@ -1551,242 +1383,24 @@ class QuillVerticalCaretMovementRun implements Iterator<TextPosition> {
 
   @override
   bool moveNext() {
-    _currentTextPosition = _editor.getTextPositionBelow(_currentTextPosition);
+    final position = _editor.getTextPositionBelow(_currentTextPosition);
+    if (position.offset <= -1) return false;
+    _currentTextPosition = position;
     return true;
   }
 
   bool movePrevious() {
-    _currentTextPosition = _editor.getTextPositionAbove(_currentTextPosition);
+    final position = _editor.getTextPositionAbove(_currentTextPosition);
+    if (position.offset <= -1) return false;
+    _currentTextPosition = position;
     return true;
   }
 
   void moveVertical(double verticalOffset) {
-    _currentTextPosition = _editor.getTextPositionMoveVertical(
+    final position = _editor.getTextPositionMoveVertical(
         _currentTextPosition, verticalOffset);
-  }
-}
-
-class EditableContainerParentData extends ContainerBoxParentData<RenderBox> {}
-
-/// Multi-child render box of editable content.
-///
-/// Common ancestor for [RenderEditor] and [RenderEditableTextBlock].
-class RenderEditableContainerBox extends RenderBox
-    with
-        ContainerRenderObjectMixin<RenderBox, EditableContainerParentData>,
-        RenderBoxContainerDefaultsMixin<RenderBox,
-            EditableContainerParentData> {
-  RenderEditableContainerBox({
-    required container_node.QuillContainer container,
-    required this.textDirection,
-    required this.scrollBottomInset,
-    required EdgeInsetsGeometry padding,
-    List<RenderEditableBox>? children,
-  })  : assert(padding.isNonNegative),
-        _container = container,
-        _padding = padding {
-    addAll(children);
-  }
-
-  container_node.QuillContainer _container;
-  TextDirection textDirection;
-  EdgeInsetsGeometry _padding;
-  double scrollBottomInset;
-  EdgeInsets? _resolvedPadding;
-
-  container_node.QuillContainer get container => _container;
-
-  void setContainer(container_node.QuillContainer c) {
-    if (_container == c) {
-      return;
-    }
-    _container = c;
-    markNeedsLayout();
-  }
-
-  EdgeInsetsGeometry getPadding() => _padding;
-
-  void setPadding(EdgeInsetsGeometry value) {
-    assert(value.isNonNegative);
-    if (_padding == value) {
-      return;
-    }
-    _padding = value;
-    _markNeedsPaddingResolution();
-  }
-
-  EdgeInsets? get resolvedPadding => _resolvedPadding;
-
-  void resolvePadding() {
-    if (_resolvedPadding != null) {
-      return;
-    }
-    _resolvedPadding = _padding.resolve(textDirection);
-    _resolvedPadding = _resolvedPadding!.copyWith(left: _resolvedPadding!.left);
-
-    assert(_resolvedPadding!.isNonNegative);
-  }
-
-  SelectableMixin childAtPosition(TextPosition position) {
-    assert(firstChild != null);
-    final targetNode = container.queryChild(position.offset, false).node;
-    SelectableMixin? targetChild;
-    for (final node in container.children) {
-      if (targetNode == node) {
-        targetChild = node.selectable;
-      }
-    }
-    return targetChild!;
-  }
-
-  void _markNeedsPaddingResolution() {
-    _resolvedPadding = null;
-    markNeedsLayout();
-  }
-
-  /// Returns child of this container located at the specified local `offset`.
-  ///
-  /// If `offset` is above this container (offset.dy is negative) returns
-  /// the first child. Likewise, if `offset` is below this container then
-  /// returns the last child.
-  SelectableMixin childAtOffset(Offset offset) {
-    assert(container.isNotEmpty,
-        "Cannot get any child at $offset when there's no children");
-    resolvePadding();
-
-    if (offset.dy <= _resolvedPadding!.top) {
-      return container.first!.selectable!;
-    }
-    if (offset.dy >= size.height - _resolvedPadding!.bottom) {
-      return container.last.selectable!;
-    }
-
-    var child = container.first?.selectable;
-    final dx = -offset.dx;
-    var dy = _resolvedPadding!.top;
-    var childIndex = 0;
-    while (childIndex < container.childCount) {
-      if (child!.renderBox!.size.contains(offset.translate(dx, -dy))) {
-        return child;
-      }
-      dy += child.renderBox!.size.height;
-      childIndex++;
-      child = container.children.elementAtOrNull(childIndex)?.selectable;
-    }
-
-    // this case possible, when editor not scrollable,
-    // but minHeight > content height and tap was under content
-    return container.last.selectable!;
-  }
-
-  @override
-  void setupParentData(RenderBox child) {
-    if (child.parentData is EditableContainerParentData) {
-      return;
-    }
-
-    child.parentData = EditableContainerParentData();
-  }
-
-  @override
-  void performLayout() {
-    assert(constraints.hasBoundedWidth);
-    resolvePadding();
-    assert(_resolvedPadding != null);
-
-    var mainAxisExtent = _resolvedPadding!.top;
-    var child = firstChild;
-    final innerConstraints =
-        BoxConstraints.tightFor(width: constraints.maxWidth)
-            .deflate(_resolvedPadding!);
-    while (child != null) {
-      child.layout(innerConstraints, parentUsesSize: true);
-      final childParentData = (child.parentData as EditableContainerParentData)
-        ..offset = Offset(_resolvedPadding!.left, mainAxisExtent);
-      mainAxisExtent += child.size.height;
-      assert(child.parentData == childParentData);
-      child = childParentData.nextSibling;
-    }
-    mainAxisExtent += _resolvedPadding!.bottom;
-    size = constraints.constrain(Size(constraints.maxWidth, mainAxisExtent));
-
-    assert(size.isFinite);
-  }
-
-  double _getIntrinsicCrossAxis(double Function(RenderBox child) childSize) {
-    var extent = 0.0;
-    var child = firstChild;
-    while (child != null) {
-      extent = math.max(extent, childSize(child));
-      final childParentData = child.parentData as EditableContainerParentData;
-      child = childParentData.nextSibling;
-    }
-    return extent;
-  }
-
-  double _getIntrinsicMainAxis(double Function(RenderBox child) childSize) {
-    var extent = 0.0;
-    var child = firstChild;
-    while (child != null) {
-      extent += childSize(child);
-      final childParentData = child.parentData as EditableContainerParentData;
-      child = childParentData.nextSibling;
-    }
-    return extent;
-  }
-
-  @override
-  double computeMinIntrinsicWidth(double height) {
-    resolvePadding();
-    return _getIntrinsicCrossAxis((child) {
-      final childHeight = math.max<double>(
-          0, height - _resolvedPadding!.top + _resolvedPadding!.bottom);
-      return child.getMinIntrinsicWidth(childHeight) +
-          _resolvedPadding!.left +
-          _resolvedPadding!.right;
-    });
-  }
-
-  @override
-  double computeMaxIntrinsicWidth(double height) {
-    resolvePadding();
-    return _getIntrinsicCrossAxis((child) {
-      final childHeight = math.max<double>(
-          0, height - _resolvedPadding!.top + _resolvedPadding!.bottom);
-      return child.getMaxIntrinsicWidth(childHeight) +
-          _resolvedPadding!.left +
-          _resolvedPadding!.right;
-    });
-  }
-
-  @override
-  double computeMinIntrinsicHeight(double width) {
-    resolvePadding();
-    return _getIntrinsicMainAxis((child) {
-      final childWidth = math.max<double>(
-          0, width - _resolvedPadding!.left + _resolvedPadding!.right);
-      return child.getMinIntrinsicHeight(childWidth) +
-          _resolvedPadding!.top +
-          _resolvedPadding!.bottom;
-    });
-  }
-
-  @override
-  double computeMaxIntrinsicHeight(double width) {
-    resolvePadding();
-    return _getIntrinsicMainAxis((child) {
-      final childWidth = math.max<double>(
-          0, width - _resolvedPadding!.left + _resolvedPadding!.right);
-      return child.getMaxIntrinsicHeight(childWidth) +
-          _resolvedPadding!.top +
-          _resolvedPadding!.bottom;
-    });
-  }
-
-  @override
-  double computeDistanceToActualBaseline(TextBaseline baseline) {
-    resolvePadding();
-    return defaultComputeDistanceToFirstActualBaseline(baseline)! +
-        _resolvedPadding!.top;
+    if (position.offset <= -1) return;
+    _currentTextPosition = position;
+    return;
   }
 }

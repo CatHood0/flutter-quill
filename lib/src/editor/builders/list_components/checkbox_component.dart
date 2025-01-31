@@ -12,7 +12,6 @@ import '../component_widget_builder.dart';
 class CheckBoxComponent extends QuillComponentBuilder {
   @override
   bool validate(QuillContainer<Node?> node) =>
-      node.style.attributes.containsKey('placeholder') &&
       node.style.attributes.containsKey(Attribute.list.key) &&
       (node.style.attributes.containsValue(Attribute.unchecked) &&
           node.style.attributes.containsValue(Attribute.checked));
@@ -128,7 +127,7 @@ class _CheckBoxComponentState extends State<CheckBoxComponentWidget>
 
   BoxDecoration? getDecorationForBlock(
       Block node, DefaultStyles? defaultStyles) {
-    return defaultStyles!.lists!.decoration;
+    return defaultStyles?.lists?.decoration;
   }
 
   EdgeInsets padding() => EdgeInsets.only(

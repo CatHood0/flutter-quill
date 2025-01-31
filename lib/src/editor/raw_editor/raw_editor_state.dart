@@ -580,41 +580,44 @@ class QuillRawEditorState extends EditorState
           final builders = widget.config.builders;
           for (final builder in builders) {
             if (builder.validate(node)) {
-              result.add(QuillComponentContainer(
-                  builder: (ctx) {
-                    return builder.build(
-                      QuillComponentContext(
-                        buildContext: context,
-                        node: node,
-                        styles: node.style,
-                        indentLevelCounts: indentLevelCounts,
-                        extra: QuillWidgetParams(
-                          scrollBottomInset: widget.config.scrollBottomInset,
-                          horizontalSpacing:
-                              _getHorizontalSpacingForLine(node, _styles),
-                          verticalSpacing:
-                              _getVerticalSpacingForLine(node, _styles),
-                          direction: nodeTextDirection,
-                          composingRange: composingRange.value,
-                          linksPrefixes: widget.config.customLinkPrefixes,
-                          onLaunchUrl: widget.config.onLaunchUrl,
-                          controller: controller,
-                          editorConfigs: widget.config,
-                          defaultStyles: _styles!,
-                          isFocusedEditor: _hasFocus,
-                          enabledInteractions:
-                              widget.config.enableInteractiveSelection,
-                          cursorCont: _cursorCont,
-                          linkActionPicker: _linkActionPicker,
-                          customStyleBuilder: widget.config.customStyleBuilder,
-                          customRecognizerBuilder:
-                              widget.config.customRecognizerBuilder,
-                          leading: null,
+              result.add(SizedBox(
+                child: QuillComponentContainer(
+                    builder: (ctx) {
+                      return builder.build(
+                        QuillComponentContext(
+                          buildContext: context,
+                          node: node,
+                          styles: node.style,
+                          indentLevelCounts: indentLevelCounts,
+                          extra: QuillWidgetParams(
+                            scrollBottomInset: widget.config.scrollBottomInset,
+                            horizontalSpacing:
+                                _getHorizontalSpacingForLine(node, _styles),
+                            verticalSpacing:
+                                _getVerticalSpacingForLine(node, _styles),
+                            direction: nodeTextDirection,
+                            composingRange: composingRange.value,
+                            linksPrefixes: widget.config.customLinkPrefixes,
+                            onLaunchUrl: widget.config.onLaunchUrl,
+                            controller: controller,
+                            editorConfigs: widget.config,
+                            defaultStyles: _styles!,
+                            isFocusedEditor: _hasFocus,
+                            enabledInteractions:
+                                widget.config.enableInteractiveSelection,
+                            cursorCont: _cursorCont,
+                            linkActionPicker: _linkActionPicker,
+                            customStyleBuilder:
+                                widget.config.customStyleBuilder,
+                            customRecognizerBuilder:
+                                widget.config.customRecognizerBuilder,
+                            leading: null,
+                          ),
                         ),
-                      ),
-                    );
-                  },
-                  node: node));
+                      );
+                    },
+                    node: node),
+              ));
             }
           }
         }
@@ -662,49 +665,55 @@ class QuillRawEditorState extends EditorState
       if (widget.config.builders.isNotEmpty) {
         for (final builder in widget.config.builders) {
           children.add(
-            builder.build(
-              QuillComponentContext(
-                buildContext: context,
-                node: line,
-                styles: line.style,
-                indentLevelCounts: indentLevelCounts,
-                extra: QuillWidgetParams(
-                  horizontalSpacing:
-                      _getHorizontalSpacingForBlock(block, defaultStyles) +
-                          indentWidthBuilder(
-                            block,
-                            context,
-                            count,
-                            numberPointWidthBuilder,
-                          ),
-                  scrollBottomInset: widget.config.scrollBottomInset,
-                  verticalSpacing:
-                      _getVerticalSpacingForBlock(block, defaultStyles) +
-                          _getSpacingForLine(line, index, count, defaultStyles),
-                  direction: direction,
-                  composingRange: composingRange.value,
-                  linksPrefixes: widget.config.customLinkPrefixes,
-                  onLaunchUrl: widget.config.onLaunchUrl!,
-                  controller: controller,
-                  editorConfigs: widget.config,
-                  defaultStyles: _styles!,
-                  isFocusedEditor: _hasFocus,
-                  enabledInteractions: widget.config.enableInteractiveSelection,
-                  cursorCont: _cursorCont,
-                  linkActionPicker: _linkActionPicker,
-                  customStyleBuilder: widget.config.customStyleBuilder,
-                  customRecognizerBuilder:
-                      widget.config.customRecognizerBuilder,
-                  leading: _buildLeading(
-                    context: context,
-                    line: line,
-                    index: index,
-                    indentLevelCounts: indentLevelCounts,
-                    count: count,
-                  ),
-                ),
-              ),
-            ),
+            QuillComponentContainer(
+                builder: (ctx) {
+                  return builder.build(
+                    QuillComponentContext(
+                      buildContext: context,
+                      node: line,
+                      styles: line.style,
+                      indentLevelCounts: indentLevelCounts,
+                      extra: QuillWidgetParams(
+                        horizontalSpacing: _getHorizontalSpacingForBlock(
+                                block, defaultStyles) +
+                            indentWidthBuilder(
+                              block,
+                              context,
+                              count,
+                              numberPointWidthBuilder,
+                            ),
+                        scrollBottomInset: widget.config.scrollBottomInset,
+                        verticalSpacing:
+                            _getVerticalSpacingForBlock(block, defaultStyles) +
+                                _getSpacingForLine(
+                                    line, index, count, defaultStyles),
+                        direction: direction,
+                        composingRange: composingRange.value,
+                        linksPrefixes: widget.config.customLinkPrefixes,
+                        onLaunchUrl: widget.config.onLaunchUrl!,
+                        controller: controller,
+                        editorConfigs: widget.config,
+                        defaultStyles: _styles!,
+                        isFocusedEditor: _hasFocus,
+                        enabledInteractions:
+                            widget.config.enableInteractiveSelection,
+                        cursorCont: _cursorCont,
+                        linkActionPicker: _linkActionPicker,
+                        customStyleBuilder: widget.config.customStyleBuilder,
+                        customRecognizerBuilder:
+                            widget.config.customRecognizerBuilder,
+                        leading: _buildLeading(
+                          context: context,
+                          line: line,
+                          index: index,
+                          indentLevelCounts: indentLevelCounts,
+                          count: count,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+                node: block),
           );
         }
       }
@@ -1018,6 +1027,10 @@ class QuillRawEditorState extends EditorState
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      //debugDumpApp();
+    });
+
     _shortcutActionsManager = EditorKeyboardShortcutsActionsManager(
       rawEditorState: this,
       context: context,

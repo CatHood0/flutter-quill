@@ -119,7 +119,7 @@ class _QuillRichTextState extends State<QuillRichText>
     final textAlign = _getTextAlign();
     // selectable node is encharged of the manage selection changes
     return SelectableNodeWidget(
-      delegate: widget.delegate,
+      delegate: this,
       selection: widget.controller.listenableSelection,
       container: node,
       cursorCont: widget.cursorCont,
@@ -726,11 +726,15 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   Offset getOffsetForCaretByPosition(TextPosition position) {
+    if (caretPrototype == null) computeCaretPrototype();
     return getOffsetForCaret(position, caretPrototype!);
   }
 
   @override
   TextPosition getPositionForOffset(Offset offset) {
+    // this could be having issues getting the correct position for offset
+    //TODO: fix it
+    // or see the cursor implementation
     return paragraph?.getPositionForOffset(offset) ??
         const TextPosition(
           offset: 0,
@@ -750,11 +754,13 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   double? getFullHeightForCaret(TextPosition position) {
+    //TODO: create a kCaretHeight
     return paragraph?.getFullHeightForCaret(position) ?? 0;
   }
 
   @override
   Offset getOffsetForCaret(TextPosition position, Rect caretPrototype) {
+    //TODO: fix this method too
     return paragraph?.getOffsetForCaret(
           position,
           caretPrototype,
@@ -782,8 +788,9 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   Rect getLocalRectForCaret(TextPosition position) {
+    if (caretPrototype == null) computeCaretPrototype();
     final caretOffset =
-        paragraph?.getOffsetForCaret(position, Rect.zero) ?? Offset.zero;
+        paragraph?.getOffsetForCaret(position, caretPrototype!) ?? Offset.zero;
     var rect = Rect.fromLTWH(
       max(0, caretOffset.dx - (cursorWidth / 2.0)),
       caretOffset.dy,
@@ -826,7 +833,7 @@ class _QuillRichTextState extends State<QuillRichText>
   List<TextBox> getBoxes(TextSelection textSelection) {
     final parentData = renderBox!.parentData as BoxParentData?;
     final parentOffset = parentData!.offset;
-    return getBoxesForSelection(textSelection).map((box) {
+    final boxes = getBoxesForSelection(textSelection).map((box) {
       return TextBox.fromLTRBD(
         box.left + parentOffset.dx,
         box.top + parentOffset.dy,
@@ -835,6 +842,18 @@ class _QuillRichTextState extends State<QuillRichText>
         box.direction,
       );
     }).toList(growable: false);
+    if (boxes.isEmpty) {
+      return [
+        TextBox.fromLTRBD(
+          0,
+          0,
+          1,
+          paragraph?.size.height ?? 0,
+          widget.textDirection ?? Directionality.of(context),
+        ),
+      ];
+    }
+    return boxes;
   }
 
   @override
@@ -914,6 +933,7 @@ class _QuillRichTextState extends State<QuillRichText>
   // superior (subjectively and in terms of fidelity) in _paintCaret. We
   // should rework this properly to once again match the platform. The constant
   // _kCaretHeightOffset scales poorly for small font sizes.
+  @override
   void computeCaretPrototype() {
     setCaretPrototype = isIos
         ? Rect.fromLTWH(0, 0, cursorWidth, cursorHeight + 2)
@@ -932,4 +952,10 @@ class _QuillRichTextState extends State<QuillRichText>
 
   @override
   GlobalKey<State<StatefulWidget>> get forwardKey => GlobalKey();
+
+  @override
+  GlobalKey<State<StatefulWidget>> get componentKey => GlobalKey();
+
+  @override
+  GlobalKey<State<StatefulWidget>> get containerKey => widget.node.key;
 }

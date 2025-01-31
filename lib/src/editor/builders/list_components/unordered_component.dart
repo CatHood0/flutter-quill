@@ -12,7 +12,6 @@ import '../component_widget_builder.dart';
 class ListUnorderedComponent extends QuillComponentBuilder {
   @override
   bool validate(QuillContainer<Node?> node) =>
-      node.style.attributes.containsKey('placeholder') &&
       node.style.attributes.containsKey(Attribute.list.key) &&
       node.style.attributes.containsValue(Attribute.ul);
 

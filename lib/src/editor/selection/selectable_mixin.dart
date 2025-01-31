@@ -11,6 +11,14 @@ mixin SelectableMixin<T extends StatefulWidget> on State<T> {
   @internal
   set setCaretPrototype(Rect caret) => _caretPrototype = caret;
 
+  void computeCaretPrototype();
+
+  /// this is the key of the entire component
+  GlobalKey get containerKey;
+
+  /// this is the key of a component that modifies the offset of QuillRichText
+  GlobalKey get componentKey;
+
   /// this is the key of the references to the implementation of QuillRichText
   GlobalKey get forwardKey;
 

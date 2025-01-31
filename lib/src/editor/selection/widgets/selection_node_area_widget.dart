@@ -46,6 +46,7 @@ class _SelectionAreaForNodeWidgetState
 
   @override
   void initState() {
+    widget.delegate.computeCaretPrototype();
     WidgetsBinding.instance.addPostFrameCallback(
       (_) {
         _updateSelectionRectsIfNeeded();
@@ -125,8 +126,9 @@ class _SelectionAreaForNodeWidgetState
             );
           }
           if (value.isCollapsed) {
-            if (prevCursorRect == null || !containsCursor(value))
+            if (prevCursorRect == null || !containsCursor(value)) {
               return sizedBox;
+            }
             return ValueListenableBuilder(
               valueListenable: widget.cursorCont.show,
               builder: (ctx, showValue, child) {
@@ -179,7 +181,7 @@ class _SelectionAreaForNodeWidgetState
       return;
     }
     oldSelection = selection;
-    if (context.mounted) {
+    if (mounted) {
       setState(() {
         if (!widget.hasFocus) {
           prevCursorRect = null;

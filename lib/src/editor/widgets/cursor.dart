@@ -271,7 +271,7 @@ class CursorPainter extends CustomPainter {
       caretOffset = Offset(caretOffset.dx + 6, caretOffset.dy);
     }
 
-    var caretRect = delegate!.caretPrototype!.shift(caretOffset);
+    var caretRect = (delegate!.caretPrototype ?? Rect.zero).shift(caretOffset);
     if (style.offset != null) {
       caretRect = caretRect.shift(style.offset!);
     }

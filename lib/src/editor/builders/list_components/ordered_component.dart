@@ -12,7 +12,6 @@ import '../component_widget_builder.dart';
 class ListOrderedComponent extends QuillComponentBuilder {
   @override
   bool validate(QuillContainer<Node?> node) =>
-      node.style.attributes.containsKey('placeholder') &&
       node.style.attributes.containsKey(Attribute.list.key) &&
       node.style.attributes.containsValue(Attribute.ol);
 
@@ -50,7 +49,7 @@ class _ListOrderedComponentState extends State<ListOrderedComponentWidget>
   @override
   GlobalKey<State<StatefulWidget>> get containerKey => widget.node.key;
 
-  // Should be used when a component will be wrapped by a padding (it modifies the offset)
+  // always need to be used in a component like Container, SizedBox, or any BoxParentData (it modifies the offset)
   @override
   GlobalKey<State<StatefulWidget>> get componentKey => GlobalKey();
 

@@ -18,7 +18,6 @@ class HeaderComponent extends QuillComponentBuilder {
   @override
   QuillComponentWidget build(QuillComponentContext componentContext) {
     return HeaderComponentWidget(
-      key: componentContext.node.key,
       node: componentContext.node,
       componentContext: componentContext,
     );
@@ -29,7 +28,7 @@ class HeaderComponentWidget extends QuillComponentStatefulWidget {
   const HeaderComponentWidget({
     required this.componentContext,
     required super.node,
-    required super.key,
+    super.key,
   });
   final QuillComponentContext componentContext;
 
@@ -64,34 +63,22 @@ class _HeaderComponentState extends State<HeaderComponentWidget>
     Widget child = Container(
       width: double.infinity,
       alignment: align,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisAlignment: MainAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
+      child: QuillRichText(
+        key: widget.node.key,
+        node: widget.node,
+        delegate: this,
+        embedBuilder: widget.componentContext.extra.editorConfigs.embedBuilder,
+        styles: widget.componentContext.extra.defaultStyles,
+        readOnly: widget.componentContext.extra.controller.readOnly,
+        controller: widget.componentContext.extra.controller,
+        onLaunchUrl: widget.componentContext.extra.onLaunchUrl,
+        linkActionPicker: widget.componentContext.extra.linkActionPicker,
+        composingRange: widget.componentContext.extra.composingRange,
+        cursorCont: widget.componentContext.extra.cursorCont,
+        hasFocus: widget.componentContext.extra.isFocusedEditor,
         textDirection: textDirection,
-        children: [
-          Flexible(
-            child: QuillRichText(
-              key: forwardKey,
-              node: widget.node,
-              delegate: this,
-              embedBuilder:
-                  widget.componentContext.extra.editorConfigs.embedBuilder,
-              styles: widget.componentContext.extra.defaultStyles,
-              readOnly: widget.componentContext.extra.controller.readOnly,
-              controller: widget.componentContext.extra.controller,
-              onLaunchUrl: widget.componentContext.extra.onLaunchUrl,
-              linkActionPicker: widget.componentContext.extra.linkActionPicker,
-              composingRange: widget.componentContext.extra.composingRange,
-              cursorCont: widget.componentContext.extra.cursorCont,
-              hasFocus: widget.componentContext.extra.isFocusedEditor,
-              textDirection: textDirection,
-              horizontalSpacing:
-                  widget.componentContext.extra.horizontalSpacing,
-              verticalSpacing: widget.componentContext.extra.verticalSpacing,
-            ),
-          ),
-        ],
+        horizontalSpacing: widget.componentContext.extra.horizontalSpacing,
+        verticalSpacing: widget.componentContext.extra.verticalSpacing,
       ),
     );
 

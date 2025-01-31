@@ -24,7 +24,6 @@ class ParagraphComponent extends QuillComponentBuilder {
   @override
   QuillComponentWidget build(QuillComponentContext componentContext) {
     return ParagraphComponentWidget(
-      key: componentContext.node.key,
       node: componentContext.node,
       componentContext: componentContext,
     );
@@ -35,7 +34,7 @@ class ParagraphComponentWidget extends QuillComponentStatefulWidget {
   const ParagraphComponentWidget({
     required this.componentContext,
     required super.node,
-    required super.key,
+    super.key,
   });
   final QuillComponentContext componentContext;
 
@@ -67,33 +66,31 @@ class _ParagraphComponentState extends State<ParagraphComponentWidget>
   @override
   Widget build(BuildContext context) {
     final textDirection = calculateDirectionality();
-    Widget child = Container(
+    final Widget child = Container(
       width: double.infinity,
       alignment: align,
-      child: QuillRichText(
-        key: forwardKey,
-        node: widget.node,
-        delegate: this,
-        embedBuilder: widget.componentContext.extra.editorConfigs.embedBuilder,
-        styles: widget.componentContext.extra.defaultStyles,
-        readOnly: widget.componentContext.extra.controller.readOnly,
-        controller: widget.componentContext.extra.controller,
-        onLaunchUrl: widget.componentContext.extra.onLaunchUrl,
-        linkActionPicker: widget.componentContext.extra.linkActionPicker,
-        composingRange: widget.componentContext.extra.composingRange,
-        cursorCont: widget.componentContext.extra.cursorCont,
-        hasFocus: widget.componentContext.extra.isFocusedEditor,
-        textDirection: textDirection,
-        horizontalSpacing: widget.componentContext.extra.horizontalSpacing,
-        verticalSpacing: widget.componentContext.extra.verticalSpacing,
+      child: Padding(
+        key: componentKey,
+        padding: padding(),
+        child: QuillRichText(
+          key: widget.node.key,
+          node: widget.node,
+          delegate: this,
+          embedBuilder:
+              widget.componentContext.extra.editorConfigs.embedBuilder,
+          styles: widget.componentContext.extra.defaultStyles,
+          readOnly: widget.componentContext.extra.controller.readOnly,
+          controller: widget.componentContext.extra.controller,
+          onLaunchUrl: widget.componentContext.extra.onLaunchUrl,
+          linkActionPicker: widget.componentContext.extra.linkActionPicker,
+          composingRange: widget.componentContext.extra.composingRange,
+          cursorCont: widget.componentContext.extra.cursorCont,
+          hasFocus: widget.componentContext.extra.isFocusedEditor,
+          textDirection: textDirection,
+          horizontalSpacing: widget.componentContext.extra.horizontalSpacing,
+          verticalSpacing: widget.componentContext.extra.verticalSpacing,
+        ),
       ),
-    );
-
-    // if has padding add it
-    child = Padding(
-      key: componentKey,
-      padding: padding(),
-      child: child,
     );
 
     return SelectableNodeWidget(
