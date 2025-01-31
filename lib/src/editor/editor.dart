@@ -13,6 +13,7 @@ import '../common/extensions/node_ext.dart';
 import '../common/utils/platform.dart';
 import '../document/nodes/container.dart' as container_node;
 import 'builders/standard_builders/standard_builders.dart';
+import 'component_renderer.dart';
 import 'editor_selection_service.dart';
 import 'gestures/quill_gesture_detector.dart';
 import 'render_container_editor.dart';
@@ -123,6 +124,8 @@ class QuillEditorState extends State<QuillEditor>
     });
   }
 
+  QuillComponentRendererService? componentRenderer;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -159,13 +162,18 @@ class QuillEditorState extends State<QuillEditor>
 
     final showSelectionToolbar = configurations.enableInteractiveSelection &&
         configurations.enableSelectionToolbar;
+    //TODO: add a check if the builders from config changes, then
+    // we will need to re-create the componentRenderer to avoid non add
+    // a new builder from configs
+    componentRenderer ??= QuillComponentRenderer(
+        builders: widget.config.builders ?? [...standardsBuilders]);
 
     final child = QuillRawEditor(
       key: _editorKey,
       controller: controller,
       config: QuillRawEditorConfig(
         characterShortcutEvents: widget.config.characterShortcutEvents,
-        builders: widget.config.builders ?? [...standardsBuilders],
+        componentsRenderer: componentRenderer!,
         spaceShortcutEvents: widget.config.spaceShortcutEvents,
         onKeyPressed: widget.config.onKeyPressed,
         customLeadingBuilder: widget.config.customLeadingBlockBuilder,
@@ -1050,7 +1058,11 @@ class RenderEditor extends RenderEditableContainerBox
 
     // Collapsed selection => caret
     final child = childAtPosition(selection.extent);
-    if (child == null) return null;
+    // if child is null, means that we probably need to re-paint the editor
+    if (child == null) {
+      markNeedsPaint();
+      return null;
+    }
     const kMargin = 8.0;
 
     final caretTop = endpoint.point.dy -

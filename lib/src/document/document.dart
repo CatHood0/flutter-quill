@@ -1,6 +1,5 @@
 import 'dart:async' show StreamController;
 
-import 'package:flutter/foundation.dart';
 import 'package:meta/meta.dart';
 
 import '../../quill_delta.dart';
@@ -43,12 +42,6 @@ class Document {
   final Root _root = Root();
 
   Root get root => _root;
-
-  /// register a litener for the changes in [Root] node
-  void addListener(VoidCallback listener) => _root.addListener(listener);
-
-  /// Removes the registered litener for the changes in [Root] node
-  void removeListener(VoidCallback listener) => _root.removeListener(listener);
 
   /// Length of this document.
   int get length => _root.length;

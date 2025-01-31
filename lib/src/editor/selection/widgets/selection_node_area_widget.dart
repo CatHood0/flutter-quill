@@ -134,8 +134,9 @@ class _SelectionAreaForNodeWidgetState
                 return ValueListenableBuilder(
                     valueListenable: widget.cursorCont.blink,
                     builder: (context, blink, child) {
-                      if (!blink || widget.delegate.renderBox == null)
+                      if (!blink || widget.delegate.renderBox == null) {
                         return sizedBox;
+                      }
                       return CustomPaint(
                         willChange: true,
                         painter: CursorPainter(
@@ -199,7 +200,10 @@ class _SelectionAreaForNodeWidgetState
             prevSelectionRects = null;
           }
         } else {
-          final rect = widget.delegate.getBoxesForSelection(selection).firstOrNull?.toRect();
+          final rect = widget.delegate
+              .getBoxesForSelection(selection)
+              .firstOrNull
+              ?.toRect();
           if (prevBlockRect != rect) {
             prevBlockRect = rect;
             prevCursorRect = null;

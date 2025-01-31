@@ -20,14 +20,9 @@ class QuillComponentContainer extends StatelessWidget {
   Widget build(BuildContext context) {
     return Directionality(
       textDirection: calculateDirectionality(context),
-      child: ListenableBuilder(
-        listenable: node,
-        builder: (_, __) {
-          return CompositedTransformTarget(
-            link: node.link,
-            child: builder(context),
-          );
-        },
+      child: CompositedTransformTarget(
+        link: node.link,
+        child: builder(context),
       ),
     );
   }

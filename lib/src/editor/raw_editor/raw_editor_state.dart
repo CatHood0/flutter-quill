@@ -16,7 +16,6 @@ import '../../../flutter_quill.dart';
 import '../../common/utils/platform.dart';
 import '../../delta/delta_diff.dart';
 import '../../document/nodes/container.dart';
-import '../builders/component_container.dart';
 import '../builders/component_context.dart';
 import '../widgets/proxy.dart';
 import '../widgets/text/text_selection.dart';
@@ -579,67 +578,47 @@ class QuillRawEditorState extends EditorState
       if (clearIndents) {
         indentLevelCounts.clear();
       }
-      if (widget.config.builders.isNotEmpty) {
-        final builders = widget.config.builders;
-        for (final builder in builders) {
-          if (builder.validate(node)) {
-            print(
-                'Validated in Line node with builder type: ${builder.runtimeType}');
-            print('Validated Node: ${node.toDelta()}');
-            result.add(
-              QuillComponentContainer(
-                node: node,
-                builder: (ctx) {
-                  return builder.build(
-                    QuillComponentContext(
-                      buildContext: context,
-                      node: node as QuillContainer,
-                      styles: node.style,
-                      indentLevelCounts: indentLevelCounts,
-                      extra: QuillWidgetParams(
-                        scrollBottomInset: widget.config.scrollBottomInset,
-                        // should we remove these parts since the users can modify
-                        // the components as they want?
-                        horizontalSpacing: node is Line
-                            ? _getHorizontalSpacingForLine(node, _styles)
-                            : _getHorizontalSpacingForBlock(node as Block),
-                        verticalSpacing: node is Line
-                            ? _getVerticalSpacingForLine(node, _styles)
-                            : _getVerticalSpacingForBlock(node as Block),
-                        direction: nodeTextDirection,
-                        composingRange: composingRange.value,
-                        linksPrefixes: widget.config.customLinkPrefixes,
-                        onLaunchUrl: widget.config.onLaunchUrl,
-                        controller: controller,
-                        editorConfigs: widget.config,
-                        defaultStyles: _styles!,
-                        isFocusedEditor: _hasFocus,
-                        enabledInteractions:
-                            widget.config.enableInteractiveSelection,
-                        cursorCont: _cursorCont,
-                        linkActionPicker: _linkActionPicker,
-                        customStyleBuilder: widget.config.customStyleBuilder,
-                        customRecognizerBuilder:
-                            widget.config.customRecognizerBuilder,
-                        onTapCheckBoxFun: node.style.attributes
-                                    .containsValue(Attribute.checked) ||
-                                node.style.attributes
-                                    .containsValue(Attribute.unchecked)
-                            ? _handleCheckboxTap
-                            : null,
-                      ),
-                    ),
-                  );
-                },
-              ),
-            );
-            break;
-          }
-        }
-      } else {
-        _dirty = false;
-        throw StateError('Unreachable.');
-      }
+      result.add(
+        widget.config.componentsRenderer.build(
+          context,
+          node,
+          QuillComponentContext(
+            buildContext: context,
+            node: node as QuillContainer,
+            styles: node.style,
+            indentLevelCounts: indentLevelCounts,
+            extra: QuillWidgetParams(
+              scrollBottomInset: widget.config.scrollBottomInset,
+              // should we remove these parts since the users can modify
+              // the components as they want?
+              horizontalSpacing: node is Line
+                  ? _getHorizontalSpacingForLine(node, _styles)
+                  : _getHorizontalSpacingForBlock(node as Block),
+              verticalSpacing: node is Line
+                  ? _getVerticalSpacingForLine(node, _styles)
+                  : _getVerticalSpacingForBlock(node as Block),
+              direction: nodeTextDirection,
+              composingRange: composingRange.value,
+              linksPrefixes: widget.config.customLinkPrefixes,
+              onLaunchUrl: widget.config.onLaunchUrl,
+              controller: controller,
+              editorConfigs: widget.config,
+              defaultStyles: _styles!,
+              isFocusedEditor: _hasFocus,
+              enabledInteractions: widget.config.enableInteractiveSelection,
+              cursorCont: _cursorCont,
+              linkActionPicker: _linkActionPicker,
+              customStyleBuilder: widget.config.customStyleBuilder,
+              customRecognizerBuilder: widget.config.customRecognizerBuilder,
+              onTapCheckBoxFun: node.style.attributes
+                          .containsValue(Attribute.checked) ||
+                      node.style.attributes.containsValue(Attribute.unchecked)
+                  ? _handleCheckboxTap
+                  : null,
+            ),
+          ),
+        ),
+      );
     }
     _dirty = false;
     return result;
