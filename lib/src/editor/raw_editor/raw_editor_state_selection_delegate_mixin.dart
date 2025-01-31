@@ -7,6 +7,13 @@ import '../../delta/delta_diff.dart';
 import '../../document/document.dart';
 import 'raw_editor.dart';
 
+//TODO: found a way to avoid make unnecessary rebuilds
+// (since TextSelection into QuillController is a ValueNotifier
+// we can only listen the changes of the selection in specific
+// parts without updating all widgets unnecessarily)
+//
+// the editor rebuilds every node when the selection
+// changes (unnecessary rebuilds)
 mixin RawEditorStateSelectionDelegateMixin on EditorState
     implements TextSelectionDelegate {
   @override
@@ -33,6 +40,7 @@ mixin RawEditorStateSelectionDelegateMixin on EditorState
   void bringIntoView(TextPosition position) {
     // Ignore errors if position is invalid (i.e. paste on iOS when editor
     // has no content and user pasted from toolbar)
+    //TODO: ???
     try {
       final localRect = renderEditor.getLocalRectForCaret(position);
       final targetOffset = _getOffsetToRevealCaret(localRect, position);

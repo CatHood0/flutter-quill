@@ -24,7 +24,7 @@ export 'src/editor/raw_editor/quill_single_child_scroll_view.dart';
 export 'src/editor/raw_editor/raw_editor.dart';
 export 'src/editor/raw_editor/raw_editor_state.dart';
 export 'src/editor/style_widgets/style_widgets.dart';
-export 'src/editor/widgets/cursor.dart';
+export 'src/editor/widgets/cursor/cursor.dart';
 export 'src/editor/widgets/default_styles.dart';
 export 'src/editor/widgets/link.dart';
 export 'src/editor/widgets/text/quill_rich_text.dart';

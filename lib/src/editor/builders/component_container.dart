@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../document/attribute.dart';
-import '../../document/nodes/container.dart';
+import '../../../flutter_quill.dart';
 
 /// QuillComponentContainer is a wrapper of block component
 ///
@@ -14,7 +13,7 @@ class QuillComponentContainer extends StatelessWidget {
     super.key,
   });
 
-  final QuillContainer node;
+  final Node node;
   final WidgetBuilder builder;
 
   @override

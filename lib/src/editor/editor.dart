@@ -463,12 +463,12 @@ class RenderEditor extends RenderEditableContainerBox
       return;
     }
     selection = t;
-    markNeedsPaint();
 
     if (!_shiftPressed && !_isDragging) {
       // Only update extend selection origin if Shift key is not pressed and
       // user is not dragging selection.
       _extendSelectionOrigin = selection;
+      markNeedsPaint();
     }
   }
 
@@ -1189,6 +1189,8 @@ class RenderEditor extends RenderEditableContainerBox
               _kFloatingCaretSizeIncrease, EdgeInsets.zero, resetLerpValue)!
           : _kFloatingCaretSizeIncrease;
       final child = childAtPosition(textPosition);
+      // if the child is not rendered yet, we will need to re-paint the editor
+      // since we cannot do nothing without rendered children
       if (child == null) {
         markNeedsPaint();
         return;

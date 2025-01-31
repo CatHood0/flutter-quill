@@ -23,6 +23,10 @@ class QuillStyles extends InheritedWidget {
   }
 
   static DefaultStyles? getStyles(BuildContext context, bool nullOk) {
+    if (!context.mounted) {
+      throw Exception(
+          'You cannot use getStyles(context, $nullOk) if the context is no longer stable or mounted into the widgets tree');
+    }
     final widget = context.dependOnInheritedWidgetOfExactType<QuillStyles>();
     if (widget == null && nullOk) {
       return null;

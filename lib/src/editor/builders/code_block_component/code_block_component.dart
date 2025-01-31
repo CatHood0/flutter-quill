@@ -12,7 +12,7 @@ import '../component_widget_builder.dart';
 
 class CodeBlockComponent extends QuillComponentBuilder {
   @override
-  bool validate(QuillContainer<Node?> node) =>
+  bool validate(Node node) =>
       node.style.attributes.containsKey(Attribute.codeBlock.key);
 
   @override
@@ -78,6 +78,7 @@ class _CodeBlockComponentState extends State<CodeBlockComponentWidget> {
                   child: QuillRichText(
                     key: widget.node.key,
                     node: line,
+                    parent: widget.node,
                     embedBuilder: widget
                         .componentContext.extra.editorConfigs.embedBuilder,
                     styles: widget.componentContext.extra.defaultStyles,

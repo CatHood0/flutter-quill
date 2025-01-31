@@ -9,13 +9,13 @@ import '../component_widget_builder.dart';
 
 class ParagraphComponent extends QuillComponentBuilder {
   @override
-  bool validate(QuillContainer<Node?> node) =>
+  bool validate(Node node) =>
       node is Line && !node.style.attributes.containsKey(Attribute.header.key);
 
   @override
   QuillComponentWidget build(QuillComponentContext componentContext) {
     return ParagraphComponentWidget(
-      node: componentContext.node,
+      node: componentContext.node as Line,
       componentContext: componentContext,
     );
   }

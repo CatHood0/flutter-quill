@@ -35,6 +35,7 @@ class QuillRichText extends StatefulWidget {
     required this.hasFocus,
     required this.horizontalSpacing,
     required this.verticalSpacing,
+    this.parent,
     this.scrollBottomInset = 0.0,
     this.textDirection,
     this.customStyleBuilder,
@@ -42,7 +43,11 @@ class QuillRichText extends StatefulWidget {
     this.customLinkPrefixes = const <String>[],
   }) : super(key: key);
 
-  final Line node;
+  final Node node;
+  // this is the parent, and should be passed
+  // when the block is a Header or a Embed
+  // only, because it contains only QuillText nodes instead Lines
+  final QuillContainer? parent;
   final TextDirection? textDirection;
   final EmbedsBuilder embedBuilder;
   final CursorCont cursorCont;
@@ -134,14 +139,21 @@ class _QuillRichTextState extends State<QuillRichText>
 
   InlineSpan _getTextSpanForWholeLine() {
     var lineStyle = _getLineStyle(widget.styles);
-    if (widget.node.hasEmbed) {
-      return _buildTextSpan(widget.styles, widget.node.children, lineStyle);
+    final node = widget.node;
+    if ((node is Line && node.hasEmbed) ||
+        (node is Leaf && node.value is! String)) {
+      return _buildTextSpan(
+        widget.styles,
+        node is QuillContainer ? node.children : LinkedList<Node>()
+          ..add(node),
+        lineStyle,
+      );
     }
 
     // The line could contain more than one Embed & more than one Text
     final textSpanChildren = <InlineSpan>[];
     var textNodes = LinkedList<Node>();
-    for (var child in widget.node.children) {
+    for (var child in node is QuillContainer ? node.children : [node]) {
       if (child is Embed) {
         if (textNodes.isNotEmpty) {
           textSpanChildren
@@ -691,7 +703,9 @@ class _QuillRichTextState extends State<QuillRichText>
       false;
 
   @override
-  QuillContainer get node => widget.node;
+  QuillContainer get node => widget.node is! QuillContainer
+      ? widget.parent!
+      : widget.node as QuillContainer;
 
   // selectable mixin implementation
 

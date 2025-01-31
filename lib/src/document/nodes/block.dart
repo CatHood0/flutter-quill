@@ -38,6 +38,7 @@ base class Block extends QuillContainer<Line?> {
         sibling
           ..adjust()
           ..notify();
+        notify();
       }
       return;
     }
@@ -51,9 +52,8 @@ base class Block extends QuillContainer<Line?> {
       block
         ..moveChildToNewParent(prev as QuillContainer<Node?>?)
         ..unlink();
-      block = prev as Block;
+      block = prev as Block..notify();
       notify();
-      block.notify();
     }
     final next = block.next;
     // merging it with next block if style is the same
@@ -61,6 +61,7 @@ base class Block extends QuillContainer<Line?> {
       (next as Block).moveChildToNewParent(block);
       next.unlink();
     }
+    notify();
   }
 
   @override

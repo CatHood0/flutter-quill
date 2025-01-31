@@ -15,6 +15,7 @@ import 'package:flutter_keyboard_visibility_temp_fork/flutter_keyboard_visibilit
 import '../../../flutter_quill.dart';
 import '../../common/utils/platform.dart';
 import '../../delta/delta_diff.dart';
+import '../../document/nodes/container.dart';
 import '../builders/component_container.dart';
 import '../builders/component_context.dart';
 import '../widgets/proxy.dart';
@@ -575,115 +576,66 @@ class QuillRawEditorState extends EditorState
 
       prevNodeOl = attrs[Attribute.list.key] == Attribute.ol;
       final nodeTextDirection = getDirectionOfNode(node, _textDirection);
-      if (node is Line) {
-        if (widget.config.builders.isNotEmpty) {
-          final builders = widget.config.builders;
-          for (final builder in builders) {
-            if (builder.validate(node)) {
-              print(
-                  'Validated in Line node with builder type: ${builder.runtimeType}');
-              print('Validated Node: ${node.toDelta()}');
-              result.add(
-                QuillComponentContainer(
-                  node: node,
-                  builder: (ctx) {
-                    return builder.build(
-                      QuillComponentContext(
-                        buildContext: context,
-                        node: node,
-                        styles: node.style,
-                        indentLevelCounts: indentLevelCounts,
-                        extra: QuillWidgetParams(
-                          scrollBottomInset: widget.config.scrollBottomInset,
-                          horizontalSpacing:
-                              _getHorizontalSpacingForLine(node, _styles),
-                          verticalSpacing:
-                              _getVerticalSpacingForLine(node, _styles),
-                          direction: nodeTextDirection,
-                          composingRange: composingRange.value,
-                          linksPrefixes: widget.config.customLinkPrefixes,
-                          onLaunchUrl: widget.config.onLaunchUrl,
-                          controller: controller,
-                          editorConfigs: widget.config,
-                          defaultStyles: _styles!,
-                          isFocusedEditor: _hasFocus,
-                          enabledInteractions:
-                              widget.config.enableInteractiveSelection,
-                          cursorCont: _cursorCont,
-                          linkActionPicker: _linkActionPicker,
-                          customStyleBuilder: widget.config.customStyleBuilder,
-                          customRecognizerBuilder:
-                              widget.config.customRecognizerBuilder,
-                          onTapCheckBoxFun: node.style.attributes
-                                      .containsValue(Attribute.checked) ||
-                                  node.style.attributes
-                                      .containsValue(Attribute.unchecked)
-                              ? _handleCheckboxTap
-                              : null,
-                        ),
+      if (clearIndents) {
+        indentLevelCounts.clear();
+      }
+      if (widget.config.builders.isNotEmpty) {
+        final builders = widget.config.builders;
+        for (final builder in builders) {
+          if (builder.validate(node)) {
+            print(
+                'Validated in Line node with builder type: ${builder.runtimeType}');
+            print('Validated Node: ${node.toDelta()}');
+            result.add(
+              QuillComponentContainer(
+                node: node,
+                builder: (ctx) {
+                  return builder.build(
+                    QuillComponentContext(
+                      buildContext: context,
+                      node: node as QuillContainer,
+                      styles: node.style,
+                      indentLevelCounts: indentLevelCounts,
+                      extra: QuillWidgetParams(
+                        scrollBottomInset: widget.config.scrollBottomInset,
+                        // should we remove these parts since the users can modify
+                        // the components as they want?
+                        horizontalSpacing: node is Line
+                            ? _getHorizontalSpacingForLine(node, _styles)
+                            : _getHorizontalSpacingForBlock(node as Block),
+                        verticalSpacing: node is Line
+                            ? _getVerticalSpacingForLine(node, _styles)
+                            : _getVerticalSpacingForBlock(node as Block),
+                        direction: nodeTextDirection,
+                        composingRange: composingRange.value,
+                        linksPrefixes: widget.config.customLinkPrefixes,
+                        onLaunchUrl: widget.config.onLaunchUrl,
+                        controller: controller,
+                        editorConfigs: widget.config,
+                        defaultStyles: _styles!,
+                        isFocusedEditor: _hasFocus,
+                        enabledInteractions:
+                            widget.config.enableInteractiveSelection,
+                        cursorCont: _cursorCont,
+                        linkActionPicker: _linkActionPicker,
+                        customStyleBuilder: widget.config.customStyleBuilder,
+                        customRecognizerBuilder:
+                            widget.config.customRecognizerBuilder,
+                        onTapCheckBoxFun: node.style.attributes
+                                    .containsValue(Attribute.checked) ||
+                                node.style.attributes
+                                    .containsValue(Attribute.unchecked)
+                            ? _handleCheckboxTap
+                            : null,
                       ),
-                    );
-                  },
-                ),
-              );
-              break;
-            }
+                    ),
+                  );
+                },
+              ),
+            );
+            break;
           }
         }
-      } else if (node is Block) {
-        if (clearIndents) {
-          indentLevelCounts.clear();
-        }
-        if (widget.config.builders.isNotEmpty) {
-          for (final builder in widget.config.builders) {
-            if (builder.validate(node)) {
-              result.add(
-                QuillComponentContainer(
-                  node: node,
-                  builder: (ctx) {
-                    return builder.build(
-                      QuillComponentContext(
-                        buildContext: context,
-                        node: node,
-                        styles: node.style,
-                        indentLevelCounts: indentLevelCounts,
-                        extra: QuillWidgetParams(
-                          horizontalSpacing:
-                              _getHorizontalSpacingForBlock(node),
-                          scrollBottomInset: widget.config.scrollBottomInset,
-                          verticalSpacing: _getVerticalSpacingForBlock(node),
-                          direction: nodeTextDirection,
-                          composingRange: composingRange.value,
-                          linksPrefixes: widget.config.customLinkPrefixes,
-                          onLaunchUrl: widget.config.onLaunchUrl,
-                          controller: controller,
-                          editorConfigs: widget.config,
-                          defaultStyles: _styles!,
-                          isFocusedEditor: _hasFocus,
-                          enabledInteractions:
-                              widget.config.enableInteractiveSelection,
-                          cursorCont: _cursorCont,
-                          linkActionPicker: _linkActionPicker,
-                          customStyleBuilder: widget.config.customStyleBuilder,
-                          customRecognizerBuilder:
-                              widget.config.customRecognizerBuilder,
-                          onTapCheckBoxFun: node.style.attributes
-                                      .containsValue(Attribute.checked) ||
-                                  node.style.attributes
-                                      .containsValue(Attribute.unchecked)
-                              ? _handleCheckboxTap
-                              : null,
-                        ),
-                      ),
-                    );
-                  },
-                ),
-              );
-              break;
-            }
-          }
-        }
-        clearIndents = false;
       } else {
         _dirty = false;
         throw StateError('Unreachable.');
@@ -694,7 +646,7 @@ class QuillRawEditorState extends EditorState
   }
 
   HorizontalSpacing _getHorizontalSpacingForLine(
-    Line line,
+    Node line,
     DefaultStyles? defaultStyles,
   ) {
     final attrs = line.style.attributes;
@@ -727,7 +679,7 @@ class QuillRawEditorState extends EditorState
   }
 
   VerticalSpacing _getVerticalSpacingForLine(
-    Line line,
+    Node line,
     DefaultStyles? defaultStyles,
   ) {
     final attrs = line.style.attributes;
@@ -854,6 +806,7 @@ class QuillRawEditorState extends EditorState
 
     // Focus
     widget.config.focusNode.addListener(_handleFocusChanged);
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final parentStyles = QuillStyles.getStyles(context, true);
       final defaultStyles = DefaultStyles.getInstance(context);

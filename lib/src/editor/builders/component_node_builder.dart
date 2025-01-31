@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../../../flutter_quill.dart';
-import '../../document/nodes/container.dart';
 import 'component_context.dart';
 import 'component_node_widget.dart';
 
@@ -11,7 +10,7 @@ abstract class QuillComponentBuilder with QuillComponentSelectable {
   ///
   /// return true if the node is valid.
   /// return false if the node is invalid,
-  bool validate(QuillContainer node) => true;
+  bool validate(Node node) => true;
 
   QuillComponentWidget build(QuillComponentContext componentContext);
 }

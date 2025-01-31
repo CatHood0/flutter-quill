@@ -99,6 +99,7 @@ base class Line extends QuillContainer<Leaf?> {
       _insertSafe(index, text, style);
       // No need to update line or block format since those attributes can only
       // be attached to `\n` character and we already know it's not present.
+      notify();
       return;
     }
 
@@ -123,6 +124,8 @@ base class Line extends QuillContainer<Leaf?> {
     // Continue with remaining part.
     final remain = text.substring(lineBreak + 1);
     nextLine.insert(0, remain, style);
+    parent?.notify();
+    notify();
   }
 
   @override
@@ -196,9 +199,10 @@ base class Line extends QuillContainer<Leaf?> {
     if (isLFDeleted) {
       // Now we can remove this line.
       final block = parent!; // remember reference before un-linking.
-      unlink();
+      unlink(false);
       block.adjust();
     }
+    notify();
   }
 
   /// Formats this line.
@@ -237,10 +241,12 @@ base class Line extends QuillContainer<Leaf?> {
         newStyle = newStyle.mergeAll(parentStyleToMerge);
         _applyBlockStyles(newStyle);
       } // else the same style, no-op.
+      parent?.notify();
     } else if (blockStyle.value != null) {
       // Only wrap with a new block if this is not an unset
       _applyBlockStyles(newStyle);
     }
+    notify();
   }
 
   void _applyBlockStyles(Style newStyle) {
@@ -258,7 +264,7 @@ base class Line extends QuillContainer<Leaf?> {
   void _wrap(Block block) {
     assert(parent != null && parent is! Block);
     insertAfter(block);
-    unlink();
+    unlink(false);
     block.add(this);
   }
 
@@ -274,10 +280,10 @@ base class Line extends QuillContainer<Leaf?> {
     assert(block.children.contains(this));
 
     if (isFirst) {
-      unlink();
+      unlink(false);
       block.insertBefore(this);
     } else if (isLast) {
-      unlink();
+      unlink(false);
       block.insertAfter(this);
     } else {
       /// need to split this block into two as [line] is in the middle.
@@ -290,10 +296,11 @@ base class Line extends QuillContainer<Leaf?> {
         before.add(child);
         child = block.first as Line;
       }
-      unlink();
+      unlink(false);
       block.insertBefore(this);
     }
     block.adjust();
+    notify();
   }
 
   Line _getNextLine(int index) {

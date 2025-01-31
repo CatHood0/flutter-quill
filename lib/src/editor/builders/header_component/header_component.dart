@@ -9,8 +9,8 @@ import '../component_widget_builder.dart';
 
 class HeaderComponent extends QuillComponentBuilder {
   @override
-  bool validate(QuillContainer<Node?> node) =>
-      node.style.attributes.containsKey(Attribute.header.key);
+  bool validate(Node node) =>
+      node is Block && node.style.attributes.containsKey(Attribute.header.key);
 
   @override
   QuillComponentWidget build(QuillComponentContext componentContext) {
@@ -48,10 +48,11 @@ class _HeaderComponentState extends State<HeaderComponentWidget> {
           shrinkWrap: true,
           itemCount: node.childCount,
           itemBuilder: (context, index) {
-            final line = node.children.elementAt(index) as Line;
+            final line = node.children.elementAt(index) as QuillText;
             return QuillRichText(
               key: widget.node.key,
               node: line,
+              parent: widget.node,
               embedBuilder:
                   widget.componentContext.extra.editorConfigs.embedBuilder,
               styles: widget.componentContext.extra.defaultStyles,

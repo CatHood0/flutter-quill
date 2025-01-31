@@ -7,7 +7,7 @@ import '../../../document/nodes/node.dart';
 import '../../../editor/embed/embed_editor_builder.dart';
 import '../../../editor/raw_editor/raw_editor.dart';
 import '../../../editor/raw_editor/raw_editor_state.dart';
-import '../../../editor/widgets/cursor.dart';
+import '../../../editor/widgets/cursor/cursor.dart';
 import '../../../editor/widgets/default_styles.dart';
 import '../../../editor/widgets/delegate.dart';
 import '../../../editor/widgets/link.dart';

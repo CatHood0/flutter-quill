@@ -50,6 +50,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
     _children.add(node as Node);
     node.parent = this;
     node.parent?.notify();
+    notify();
     clearLengthCache();
   }
 
@@ -59,6 +60,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
     node?.parent = this;
     node?.parent?.notify();
     _children.addFirst(node as Node);
+    notify();
     clearLengthCache();
   }
 
@@ -68,6 +70,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
     node?.parent = null;
     node?.parent?.notify();
     _children.remove(node as Node);
+    notify();
     clearLengthCache();
   }
 
@@ -87,6 +90,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
     /// In case [newParent] already had children we need to make sure
     /// combined list is optimized.
     if (last != null) last.adjust();
+    notify();
   }
 
   /// Queries the child [Node] at [offset] in this container.
@@ -151,6 +155,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
       final child = queryChild(index, false);
       if (child.isNotEmpty) {
         child.node!.insert(child.offset, data, style);
+        notify();
       }
     } else {
       assert(index == 0);
@@ -165,6 +170,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
     assert(isNotEmpty);
     final child = queryChild(index, false);
     child.node!.retain(child.offset, len, style);
+    notify();
   }
 
   @override
@@ -172,6 +178,7 @@ abstract base class QuillContainer<T extends Node?> extends Node {
     assert(isNotEmpty);
     final child = queryChild(index, false);
     child.node!.delete(child.offset, len);
+    notify();
   }
 
   @override

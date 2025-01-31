@@ -152,12 +152,14 @@ abstract base class Node extends ChangeNotifier with LinkedListEntry<Node> {
   }
 
   @override
-  void unlink() {
+  void unlink([bool shouldNotify = true]) {
     assert(parent != null);
     clearLengthCache();
     parent = null;
-    parent?.notify();
-    notify();
+    if (shouldNotify) {
+      parent?.notify();
+      notify();
+    }
     super.unlink();
   }
 

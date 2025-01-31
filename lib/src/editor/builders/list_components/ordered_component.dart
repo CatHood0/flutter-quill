@@ -11,7 +11,8 @@ import '../component_widget_builder.dart';
 
 class ListOrderedComponent extends QuillComponentBuilder {
   @override
-  bool validate(QuillContainer<Node?> node) =>
+  bool validate(Node node) =>
+      node.style.attributes.containsKey(Attribute.list.key) &&
       node.style.attributes.containsValue(Attribute.ol);
 
   @override

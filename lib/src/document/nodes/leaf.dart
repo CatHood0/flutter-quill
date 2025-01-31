@@ -29,6 +29,7 @@ abstract base class Leaf extends Node {
     _value = v;
     _length = null;
     clearOffsetCache();
+    notify();
   }
 
   Object _value;
@@ -49,6 +50,7 @@ abstract base class Leaf extends Node {
       // return 1 for embedded object
       _length = 1;
     }
+    notify();
     return _length!;
   }
 
@@ -56,6 +58,8 @@ abstract base class Leaf extends Node {
   void clearLengthCache() {
     if (parent != null) {
       parent!.clearLengthCache();
+      parent?.notify();
+      notify();
     }
   }
 
@@ -93,7 +97,9 @@ abstract base class Leaf extends Node {
     if (remain > 0 && node.next != null) {
       node.next?.retain(0, remain, style);
     }
-    node.format(style);
+    node
+      ..format(style)
+      ..notify();
     notify();
   }
 
